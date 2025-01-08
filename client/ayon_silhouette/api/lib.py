@@ -75,12 +75,13 @@ def collect_animation_defs(create_context, fps=False):
 def maintained_selection():
     """Maintain selection during context."""
 
-    # previous_selection = doc.GetSelection()
+    previous_selection = fx.selection()
     try:
         yield
     finally:
-        # set_selection(doc, previous_selection)
+        fx.select(previous_selection)
         pass
+
 
 @contextlib.contextmanager
 def undo_chunk():
