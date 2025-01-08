@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 import contextlib
 from functools import partial
@@ -24,6 +25,8 @@ from .workio import (
     current_file
 )
 from . import lib
+
+import fx
 
 log = logging.getLogger("ayon_silhouette")
 
@@ -63,6 +66,7 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         # register_inventory_action_path(INVENTORY_PATH)
 
         defer(self._install_menu)
+        self._install_hooks()
 
     def _install_menu(self):
         project_settings = get_current_project_settings()
@@ -129,6 +133,9 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
             lambda: host_tools.show_workfiles(parent=parent)
         )
 
+    def _install_hooks(self):
+        pass
+
     def open_workfile(self, filepath):
         return open_file(filepath)
 
@@ -162,31 +169,44 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         return {}
 
 
-def parse_container(container):
+def parse_container(source, project=None):
     """Return the container node's full container data.
 
     Args:
-        container (str): A container node name.
+        source (fx.Source): A Silhouette source.
 
     Returns:
         dict[str, Any]: The container schema data for this container node.
 
     """
-    data = lib.read(container)
+    ayon = source.property("AYON")
+
+    # TODO: Error check whether value is valid json
+    data = json.loads(ayon.value)
 
     # Backwards compatibility pre-schemas for containers
     data["schema"] = data.get("schema", "ayon:container-3.0")
+    data["objectName"] = source.label  # required for container data model
 
     # Append transient data
-    data["objectName"] = container.GetName()
-    data["node"] = container
+    data["_item"] = source
+    if project is not None:
+        data["_project"] = project
 
     return data
 
 
-def iter_containers(doc=None):
+def iter_containers(project=None):
     """Yield all objects in the active document that have 'id' attribute set
     matching an AYON container ID"""
-    if False:
-        yield
-    return
+
+    if project is None:
+        project = fx.activeProject()
+
+    # List all sources with `AYON` property
+    for source in project.sources:
+        ayon = source.property("AYON")
+        if not ayon:
+            continue
+
+        yield parse_container(source, project=project)
