@@ -15,6 +15,8 @@ from ayon_core.pipeline import (
     # AYON_CONTAINER_ID,
     get_current_context,
 )
+from ayon_core.pipeline.load import any_outdated_containers
+from ayon_core.lib import emit_event, register_event_callback
 from ayon_core.pipeline.context_tools import version_up_current_workfile
 from ayon_core.settings import get_current_project_settings
 from .workio import (
@@ -27,6 +29,7 @@ from .workio import (
 from . import lib
 
 import fx
+import hook
 
 log = logging.getLogger("ayon_silhouette")
 
@@ -67,6 +70,8 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
 
         defer(self._install_menu)
         self._install_hooks()
+
+        register_event_callback("open", on_open)
 
     def _install_menu(self):
         project_settings = get_current_project_settings()
@@ -134,7 +139,16 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         )
 
     def _install_hooks(self):
-        pass
+        # Connect events
+        hook.add("startupComplete", partial(emit_event, "init"))
+        hook.add("pre_save", partial(emit_event, "before.save"))
+        hook.add("post_save", partial(emit_event, "save"))
+        hook.add("post_load", partial(emit_event, "open"))
+
+        # TODO: Emit a "new" project event which should be detectable by
+        #  detecting a 'project_selected' hook without a 'post_load' hook
+        #  having been triggered?
+        # TODO: Detect a "save into another context" similar to Maya
 
     def open_workfile(self, filepath):
         return open_file(filepath)
@@ -203,6 +217,9 @@ def iter_containers(project=None):
     if project is None:
         project = fx.activeProject()
 
+    if not project:
+        return
+
     # List all sources with `AYON` property
     for source in project.sources:
         ayon = source.property("AYON")
@@ -210,3 +227,40 @@ def iter_containers(project=None):
             continue
 
         yield parse_container(source, project=project)
+
+
+def on_open():
+
+    def _process():
+
+        from ayon_core.tools.utils import SimplePopup
+
+        if any_outdated_containers():
+            print("Outdated")
+            log.warning("Scene has outdated content.")
+
+            # Find maya main window
+            parent = lib.get_main_window()
+            if parent is None:
+                log.info("Skipping outdated content pop-up "
+                         "because Silhouette window can't be found.")
+            else:
+
+                # Show outdated pop-up
+                def _on_show_inventory():
+                    host_tools.show_scene_inventory(parent=parent)
+
+                dialog = SimplePopup(parent=parent)
+                dialog.setWindowTitle("Silhouette scene has outdated content")
+                dialog.set_message("There are outdated containers in "
+                                  "your Silhouette scene.")
+                dialog.on_clicked.connect(_on_show_inventory)
+                dialog.show()
+        else:
+            print("No outdated")
+
+    # Even though the hook is 'post_load' it seems the project isn't actually
+    # active directly, so we defer the actual callback here for now to ensure
+    # we act upon the new project? We may need to rely on the
+    # `project_selected` hook instead
+    defer(_process)
