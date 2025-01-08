@@ -84,10 +84,18 @@ def maintained_selection():
 
 
 @contextlib.contextmanager
-def undo_chunk():
-    """Open a undo chunk during context."""
+def undo_chunk(label=""):
+    """Open undo chunk during context.
+
+    In Silhouette, it's often necessary to group operations into an undo chunk
+    to ensure the UI updates correctly on property and value changes.
+
+    Note that `contextlib.contextmanager` can also be used as function
+    decorators.
+
+    """
     try:
-        fx.startUndo()
+        fx.beginUndo(label)
         yield
     finally:
         fx.endUndo()

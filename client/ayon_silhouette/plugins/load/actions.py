@@ -2,6 +2,7 @@
 """
 
 from ayon_core.pipeline import load
+from ayon_silhouette.api import lib
 
 import fx
 
@@ -12,17 +13,16 @@ def _set_frame_range(frame_start: int, frame_end: int, fps: float):
     if not session:
         return
 
-    session.startFrame = frame_start
-    session.duration = frame_end - frame_start + 1
-    session.frameRate = fps
+    with lib.undo_chunk("Set frame range"):
+        session.frameRate = fps
+        session.startFrame = frame_start
+        session.duration = frame_end - frame_start + 1
 
-    # TODO: The above does seem to set the values - however the UI does not
-    #  directly update and refresh. Figure out how to force a UI redraw/refresh
-
-    # TODO: Should we influence any of below? E.g. render range is not writable
-    # session.renderRange = (frame_start, frame_end)
-    # session.workRange = (frame_start, frame_end)
-    # session.outputRange = (frame_start, frame_end)
+        # TODO: Should we influence any of below?
+        #   E.g. render range is not writable
+        # session.renderRange = (frame_start, frame_end)
+        # session.workRange = (frame_start, frame_end)
+        # session.outputRange = (frame_start, frame_end)
 
 
 class SetFrameRangeLoader(load.LoaderPlugin):

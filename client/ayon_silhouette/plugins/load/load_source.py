@@ -2,7 +2,7 @@ import json
 
 import fx
 
-from ayon_silhouette.api import plugin
+from ayon_silhouette.api import plugin, lib
 
 
 class SourceLoader(plugin.SilhouetteLoader):
@@ -15,6 +15,7 @@ class SourceLoader(plugin.SilhouetteLoader):
     order = -10
     representations = {"*"}
 
+    @lib.undo_chunk("Load Source")
     def load(self, context, name=None, namespace=None, options=None):
         """Merge the Alembic into the scene."""
 
@@ -61,6 +62,7 @@ class SourceLoader(plugin.SilhouetteLoader):
     def _get_label(self, context):
         return context["product"]["name"]
 
+    @lib.undo_chunk("Update Source")
     def update(self, container, context):
         # Update filepath
         item = container["_item"]
