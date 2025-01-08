@@ -17,7 +17,10 @@ from ayon_core.pipeline import (
 )
 from ayon_core.pipeline.load import any_outdated_containers
 from ayon_core.lib import emit_event, register_event_callback
-from ayon_core.pipeline.context_tools import version_up_current_workfile
+from ayon_core.pipeline.context_tools import (
+    version_up_current_workfile,
+    get_current_task_entity
+)
 from ayon_core.settings import get_current_project_settings
 from .workio import (
     open_file,
@@ -137,6 +140,14 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         action.triggered.connect(
             lambda: host_tools.show_workfiles(parent=parent)
         )
+
+        action = menu.addAction("Set Frame Range")
+        action.setToolTip("Set active session frame range")
+        action.triggered.connect(_on_set_frame_range)
+
+        action = menu.addAction("Set Resolution")
+        action.setToolTip("Set active session resolution")
+        action.triggered.connect(_on_set_resolution)
 
     def _install_hooks(self):
         # Connect events
@@ -261,3 +272,21 @@ def on_open():
     # we act upon the new project? We may need to rely on the
     # `project_selected` hook instead
     defer(_process)
+
+
+def _on_set_resolution():
+    """Set active session resolution based on current task attributes."""
+    session = fx.activeSession()
+    if not session:
+        return
+    task_entity = get_current_task_entity()
+    lib.set_resolution_from_entity(session, task_entity)
+
+
+def _on_set_frame_range():
+    """Set active session frame range based on current task attributes."""
+    session = fx.activeSession()
+    if not session:
+        return
+    task_entity = get_current_task_entity()
+    lib.set_frame_range_from_entity(session, task_entity)

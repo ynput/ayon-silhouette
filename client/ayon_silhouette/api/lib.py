@@ -115,3 +115,41 @@ def read(node) -> dict:
     """Return user-defined attributes from `node`"""
 
     raise NotImplementedError("Not implemented yet")
+
+
+def set_resolution_from_entity(session, task_entity):
+    """Set resolution and pixel aspect from task entity attributes.
+
+    Args:
+        session (fx.Session): The Silhouette session.
+        task_entity (dict): Task entity.
+
+    """
+    resolution_width = task_entity["attrib"]["resolutionWidth"]
+    resolution_height = task_entity["attrib"]["resolutionHeight"]
+    pixel_aspect = task_entity["attrib"]["pixelAspect"]
+
+    fx.beginUndo("Set session resolution")
+    session.width = resolution_width
+    session.height = resolution_height
+    session.pixelAspect = pixel_aspect
+    fx.endUndo()
+
+
+def set_frame_range_from_entity(session, task_entity):
+    """Set frame range and FPS from task entity attributes.
+
+    Args:
+        session (fx.Session): The Silhouette session.
+        task_entity (dict): Task entity.
+
+    """
+    frame_start = task_entity["attrib"]["frameStart"]
+    frame_end = task_entity["attrib"]["frameEnd"]
+    fps = task_entity["attrib"]["fps"]
+
+    fx.beginUndo("Set session frame range")
+    session.frameRate = fps
+    session.startFrame = frame_start
+    session.duration = frame_end - frame_start + 1
+    fx.endUndo()
