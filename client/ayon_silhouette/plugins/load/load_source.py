@@ -37,6 +37,11 @@ class SourceLoader(plugin.SilhouetteLoader):
         property = fx.Property("AYON", "AYON", "")
         source.addProperty(property)
 
+        # TODO: The property also 'clears out' when "Reset all" is clicked on
+        #  the source item, basically clearing out the AYON property to the
+        #  default "" empty value. Figure out how to prevent this. E.g. update
+        #  default value along, or lock it.
+
         # property.hidden = True  # hide the attribute
         property.value = json.dumps({
             "name": str(name),
