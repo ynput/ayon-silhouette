@@ -149,6 +149,12 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         action.setToolTip("Set active session resolution")
         action.triggered.connect(_on_set_resolution)
 
+        menu.addSeparator()
+        action = menu.addAction("Experimental Tools...")
+        action.triggered.connect(
+            lambda: host_tools.show_experimental_tools_dialog(parent=parent)
+        )
+
     def _install_hooks(self):
         # Connect events
         hook.add("startupComplete", partial(emit_event, "init"))
