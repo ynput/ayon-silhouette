@@ -142,12 +142,12 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         # Connect events
         hook.add("startupComplete", partial(emit_event, "init"))
         hook.add("pre_save", partial(emit_event, "before.save"))
+
+        # Note that save and load we respond to a 'project' whereas for new
+        # we respond to a new 'session'.
         hook.add("post_save", partial(emit_event, "save"))
         hook.add("post_load", partial(emit_event, "open"))
-
-        # TODO: Emit a "new" project event which should be detectable by
-        #  detecting a 'project_selected' hook without a 'post_load' hook
-        #  having been triggered?
+        hook.add("session_created", partial(emit_event, "new"))
         # TODO: Detect a "save into another context" similar to Maya
 
     def open_workfile(self, filepath):
