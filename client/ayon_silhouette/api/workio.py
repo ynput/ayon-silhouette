@@ -25,11 +25,7 @@ def save_file(filepath=None):
 
 
 def open_file(filepath):
-    # TODO: Open project if no active project yet to load into
-    project = _get_project()
-    if not project:
-        return
-    project.load(filepath)
+    return fx.loadProject(filepath)
 
 
 def current_file() -> str:
