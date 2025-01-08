@@ -60,13 +60,13 @@ def collect_animation_defs(create_context, fps=False):
                   decimals=0),
     ]
 
-    if fps:
-        doc = active_document()
-        current_fps = doc.GetFps()
-        fps_def = NumberDef(
-            "fps", label="FPS", default=current_fps, decimals=5
-        )
-        defs.append(fps_def)
+    # if fps:
+    #     doc = active_document()
+    #     current_fps = doc.GetFps()
+    #     fps_def = NumberDef(
+    #         "fps", label="FPS", default=current_fps, decimals=5
+    #     )
+    #     defs.append(fps_def)
 
     return defs
 

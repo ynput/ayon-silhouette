@@ -11,7 +11,7 @@ from ayon_core.tools.utils import host_tools
 from ayon_core.pipeline import (
     register_loader_plugin_path,
     register_creator_plugin_path,
-    AYON_CONTAINER_ID,
+    # AYON_CONTAINER_ID,
     get_current_context,
 )
 from ayon_core.pipeline.context_tools import version_up_current_workfile
