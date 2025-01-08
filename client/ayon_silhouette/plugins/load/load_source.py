@@ -3,6 +3,9 @@ import json
 import fx
 
 from ayon_silhouette.api import plugin, lib
+from ayon_core.lib.transcoding import (
+    VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
+)
 
 
 class SourceLoader(plugin.SilhouetteLoader):
@@ -14,6 +17,7 @@ class SourceLoader(plugin.SilhouetteLoader):
     label = "Load Source"
     order = -10
     representations = {"*"}
+    extensions = VIDEO_EXTENSIONS.union(IMAGE_EXTENSIONS)
 
     @lib.undo_chunk("Load Source")
     def load(self, context, name=None, namespace=None, options=None):
