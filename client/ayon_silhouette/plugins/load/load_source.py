@@ -17,7 +17,9 @@ class SourceLoader(plugin.SilhouetteLoader):
     label = "Load Source"
     order = -10
     representations = {"*"}
-    extensions = VIDEO_EXTENSIONS.union(IMAGE_EXTENSIONS)
+    extensions = {
+        ext.lstrip(".") for ext in VIDEO_EXTENSIONS.union(IMAGE_EXTENSIONS)
+    }
 
     @lib.undo_chunk("Load Source")
     def load(self, context, name=None, namespace=None, options=None):
