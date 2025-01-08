@@ -3,8 +3,10 @@ import logging
 import contextlib
 
 import pyblish.api
+from qtpy import QtCore
 
 from ayon_core.host import HostBase, IWorkfileHost, ILoadHost, IPublishHost
+from ayon_core.tools.utils import host_tools
 from ayon_core.pipeline import (
     register_loader_plugin_path,
     register_creator_plugin_path,
@@ -17,13 +19,11 @@ from .workio import (
     has_unsaved_changes,
     current_file
 )
-import ayon_silhouette
-
 from . import lib
 
 log = logging.getLogger("ayon_silhouette")
 
-HOST_DIR = os.path.dirname(os.path.abspath(ayon_silhouette.__file__))
+HOST_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLUGINS_DIR = os.path.join(HOST_DIR, "plugins")
 PUBLISH_PATH = os.path.join(PLUGINS_DIR, "publish")
 LOAD_PATH = os.path.join(PLUGINS_DIR, "load")
@@ -32,6 +32,11 @@ INVENTORY_PATH = os.path.join(PLUGINS_DIR, "inventory")
 
 AYON_CONTAINERS = lib.AYON_CONTAINERS
 AYON_CONTEXT_CREATOR_IDENTIFIER = "io.ayon.create.context"
+
+
+def defer(callable):
+    """Defer a callable to the next event loop."""
+    QtCore.QTimer.singleShot(0, callable)
 
 
 class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
@@ -52,7 +57,50 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         register_creator_plugin_path(CREATE_PATH)
         # TODO: Register only when any inventory actions are created
         # register_inventory_action_path(INVENTORY_PATH)
-        self.log.info(PUBLISH_PATH)
+
+        defer(self._install_menu)
+
+    def _install_menu(self):
+        parent = lib.get_main_window()
+
+        menu_label = os.environ.get("AYON_MENU_LABEL") or "AYON"
+        menu = parent.menuBar().addMenu(menu_label)
+
+        # TODO: Add current context label menu entry
+        # TODO: Add version up menu entry
+
+        action = menu.addAction("Create...")
+        action.triggered.connect(
+            lambda: host_tools.show_publisher(parent=parent,
+                                              tab="create")
+        )
+
+        action = menu.addAction("Load...")
+        action.triggered.connect(
+            lambda: host_tools.show_loader(parent=parent, use_context=True)
+        )
+
+        action = menu.addAction("Publish...")
+        action.triggered.connect(
+            lambda: host_tools.show_publisher(parent=parent,
+                                              tab="publish")
+        )
+
+        action = menu.addAction("Manage...")
+        action.triggered.connect(
+            lambda: host_tools.show_scene_inventory(parent=parent)
+        )
+
+        action = menu.addAction("Library...")
+        action.triggered.connect(
+            lambda: host_tools.show_library_loader(parent=parent)
+        )
+
+        menu.addSeparator()
+        action = menu.addAction("Work Files...")
+        action.triggered.connect(
+            lambda: host_tools.show_workfiles(parent=parent)
+        )
 
     def open_workfile(self, filepath):
         return open_file(filepath)
