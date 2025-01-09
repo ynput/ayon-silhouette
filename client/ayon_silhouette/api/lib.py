@@ -122,13 +122,12 @@ def imprint(node, data: Optional[dict], key="AYON"):
             node.removeProperty(key)
         return
 
-    # Serialize data
-    value = json.dumps(data)
-
     # Set data
     if isinstance(node, fx.Node):
-        node.setState(key, value)
+        node.setState(key, data)
     elif isinstance(node, fx.Object):
+        # Serialize data
+        value = json.dumps(data)
         prop = node.property(key)
         if not prop:
             # Create property
@@ -157,9 +156,7 @@ def read(node, key="AYON") -> Optional[dict]:
     """
     if isinstance(node, fx.Node):
         # Use node state instead of property
-        value = node.getState(key)
-        if not value:
-            return
+        return node.getState(key)
     elif isinstance(node, fx.Object):
         # Project or source items do not have state
         prop = node.property(key)
@@ -167,6 +164,14 @@ def read(node, key="AYON") -> Optional[dict]:
             return
         value = prop.value
         if not value:
+            return
+
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError as exc:
+            log.error(
+                f"Failed to read '{key}' from node {node}"
+                f" with value {value}: {exc}")
             return
     else:
         raise TypeError(f"Unsupported node type: {node} ({type(node)})")
