@@ -21,7 +21,10 @@ def save_file(filepath=None):
     project = _get_project()
     if not project:
         return
-    return project.save(filepath)
+
+    # Consider `None` value to be saving into current project path
+    args = (filepath,) if filepath else ()
+    return project.save(*args)
 
 
 def open_file(filepath):

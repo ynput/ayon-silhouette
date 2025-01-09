@@ -176,13 +176,18 @@ def read(node, key="AYON") -> Optional[dict]:
     else:
         raise TypeError(f"Unsupported node type: {node} ({type(node)})")
 
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError as exc:
-        log.error(
-            f"Failed to read '{key}' from node {node}"
-            f" with value {value}: {exc}")
-        return
+
+def set_new_node_position(node):
+    """Position the node near the active node, or the top-right of the scene"""
+    n = fx.activeNode()
+    if n:
+        pos = fx.trees.nextPos(n)
+    else:
+        bounds = fx.trees.bounds
+        size = fx.trees.nodeSize(node)
+        pos = fx.Point(bounds.right - size.x / 2,
+                    bounds.top + size.y / 2)
+    node.setState("graph.pos", pos)
 
 
 def set_resolution_from_entity(session, task_entity):

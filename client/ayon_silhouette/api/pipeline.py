@@ -1,5 +1,4 @@
 import os
-import json
 import logging
 import contextlib
 from functools import partial
@@ -13,6 +12,7 @@ from ayon_core.pipeline import (
     register_loader_plugin_path,
     register_creator_plugin_path,
     # AYON_CONTAINER_ID,
+    AYON_INSTANCE_ID,
     get_current_context,
 )
 from ayon_core.pipeline.load import any_outdated_containers
@@ -247,23 +247,20 @@ def iter_containers(project=None):
             yield data
 
 
-def iter_instances(project=None):
-    """Yield all objects in the active document that have 'id' attribute set
+def iter_instances(session=None):
+    """Yield all objects in the active session that have 'id' attribute set
     matching an AYON container ID"""
 
-    if project is None:
-        project = fx.activeProject()
-
-    if not project:
+    if session is None:
+        session = fx.activeSession()
+    if not session:
         return
 
-    # List all sources with `AYON` property
-    for source in project.sources:
-        ayon = source.property("AYON")
-        if not ayon:
-            continue
-
-        yield parse_container(source, project=project)
+    for node in session.nodes:
+        data = lib.read(node)
+        if data and data.get("id") == AYON_INSTANCE_ID:
+            data["_node"] = node
+            yield data
 
 
 def on_open():
