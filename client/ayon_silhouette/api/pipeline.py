@@ -205,15 +205,18 @@ def parse_container(source, project=None):
 
     Args:
         source (fx.Source): A Silhouette source.
+        project (Optional[fx.Project]): Project related to the source
+            item or node so that we can track it back to the project.
 
     Returns:
         dict[str, Any]: The container schema data for this container node.
 
     """
-    ayon = source.property("AYON")
+    data = lib.read(source)
+    if not data:
+        return
 
-    # TODO: Error check whether value is valid json
-    data = json.loads(ayon.value)
+    # TODO: ensure object is actually a container by `id` value
 
     # Backwards compatibility pre-schemas for containers
     data["schema"] = data.get("schema", "ayon:container-3.0")
@@ -228,6 +231,23 @@ def parse_container(source, project=None):
 
 
 def iter_containers(project=None):
+    """Yield all source objects in the active project with AYON property
+     AYON container ID"""
+
+    if project is None:
+        project = fx.activeProject()
+
+    if not project:
+        return
+
+    # List all sources with `AYON` property
+    for source in project.sources:
+        data = parse_container(source, project=project)
+        if data:
+            yield data
+
+
+def iter_instances(project=None):
     """Yield all objects in the active document that have 'id' attribute set
     matching an AYON container ID"""
 

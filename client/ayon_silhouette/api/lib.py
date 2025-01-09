@@ -1,5 +1,8 @@
 """Library functions for Silhouette."""
 import contextlib
+import json
+import logging
+from typing import Optional
 
 from ayon_core.lib import NumberDef
 
@@ -8,6 +11,8 @@ import tools.window
 
 AYON_CONTAINERS = "AYON_CONTAINERS"
 JSON_PREFIX = "JSON::"
+
+log = logging.getLogger(__name__)
 
 
 def get_main_window():
@@ -101,20 +106,78 @@ def undo_chunk(label=""):
         fx.endUndo()
 
 
-def imprint(node, data, group=None):
+def imprint(node, data: Optional[dict], key="AYON"):
     """Write `data` to `node` as userDefined attributes
 
     Arguments:
-        node (c4d.BaseObject): The selection object
+        node (fx.Object | fx.Node): The selection object
         data (dict): Dictionary of key/value pairs
     """
-    raise NotImplementedError("Not implemented yet")
+
+    # Remove data
+    if data is None:
+        if isinstance(node, fx.Node):
+            node.setState(key, None)
+        else:
+            node.removeProperty(key)
+        return
+
+    # Serialize data
+    value = json.dumps(data)
+
+    # Set data
+    if isinstance(node, fx.Node):
+        node.setState(key, value)
+    elif isinstance(node, fx.Object):
+        prop = node.property(key)
+        if not prop:
+            # Create property
+            # Arguments are `id`, `label` and `default_value`. By passing the
+            # default value as empty string we make it a string attribute.
+            prop = fx.Property(key, key, "")
+            prop.hidden = True
+            node.addProperty(prop)
+
+        # Set value
+        prop.value = value
+    else:
+        raise TypeError(f"Unsupported node type: {node} ({type(node)})")
 
 
-def read(node) -> dict:
-    """Return user-defined attributes from `node`"""
+def read(node, key="AYON") -> Optional[dict]:
+    """Return user-defined attributes from `node`
 
-    raise NotImplementedError("Not implemented yet")
+    Arguments:
+        node (fx.Object | fx.Node): Node or object to redad from.
+        key (str): The key to read from.
+
+    Returns:
+        Optional[dict]: The data stored in the node.
+
+    """
+    if isinstance(node, fx.Node):
+        # Use node state instead of property
+        value = node.getState(key)
+        if not value:
+            return
+    elif isinstance(node, fx.Object):
+        # Project or source items do not have state
+        prop = node.property(key)
+        if not prop:
+            return
+        value = prop.value
+        if not value:
+            return
+    else:
+        raise TypeError(f"Unsupported node type: {node} ({type(node)})")
+
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError as exc:
+        log.error(
+            f"Failed to read '{key}' from node {node}"
+            f" with value {value}: {exc}")
+        return
 
 
 def set_resolution_from_entity(session, task_entity):

@@ -1,5 +1,3 @@
-import json
-
 import fx
 
 from ayon_silhouette.api import plugin, lib
@@ -38,19 +36,8 @@ class SourceLoader(plugin.SilhouetteLoader):
         source.label = self._get_label(context)
         project.addItem(source)
 
-        # Add AYON property
-        # Arguments are `id`, `label` and `default_value`. By passing the
-        # default value as empty string we make it a visible string attribute.
-        property = fx.Property("AYON", "AYON", "")
-        source.addProperty(property)
-
-        # TODO: The property also 'clears out' when "Reset all" is clicked on
-        #  the source item, basically clearing out the AYON property to the
-        #  default "" empty value. Figure out how to prevent this. E.g. update
-        #  default value along, or lock it.
-
         # property.hidden = True  # hide the attribute
-        property.value = json.dumps({
+        lib.imprint(source, data={
             "name": str(name),
             "namespace": str(namespace),
             "loader": str(self.__class__.__name__),
@@ -75,12 +62,17 @@ class SourceLoader(plugin.SilhouetteLoader):
         item.property("path").value = self.filepath_from_context(context)
 
         # Update representation id
-        data = json.loads(item.property("AYON").value)
+        data = lib.read(item)
         data["representation"] = context["representation"]["id"]
-        item.property("AYON").value = json.dumps(data)
+        lib.imprint(item, data)
 
+    @lib.undo_chunk("Remove container")
     def remove(self, container):
         """Remove all sub containers"""
         item = container["_item"]
         project = container["_project"]
         project.removeItem(item)
+
+    def switch(self, container, context):
+        """Support switch to another representation."""
+        self.update(container, context)
