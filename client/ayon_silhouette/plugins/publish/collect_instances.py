@@ -13,7 +13,8 @@ class CollectInstances(pyblish.api.InstancePlugin):
         self.creator_attributes_to_instance_data(instance)
 
         # Define nice instance label
-        instance_node = instance.data.get("transientData", {}).get("instance_node")
+        instance_node = instance.data.get(
+            "transientData", {}).get("instance_node")
         name = instance_node.label if instance_node else instance.name
         label = "{0} ({1})".format(name, instance.data["folderPath"])
 
