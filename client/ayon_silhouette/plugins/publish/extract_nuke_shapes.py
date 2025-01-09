@@ -44,6 +44,7 @@ class ExtractNukeShapes(publish.Extractor):
 class ExtractFusionShapes(ExtractNukeShapes):
     """Extract node as Fusion Shapes."""
     # TODO: Suppress a pop-up dialog
+    families = ["matteshapes"]
     label = "Extract Fusion Shapes"
     extension = "setting"
     io_module = "Fusion Shapes"
@@ -51,6 +52,7 @@ class ExtractFusionShapes(ExtractNukeShapes):
 
 class ExtractSilhouetteShapes(ExtractNukeShapes):
     """Extract node as Silhouette Shapes."""
+    families = ["matteshapes"]
     label = "Extract Silhouette Shapes"
     extension = "fxs"
     io_module = "Silhouette Shapes"
@@ -58,6 +60,7 @@ class ExtractSilhouetteShapes(ExtractNukeShapes):
 
 class ExtractShakeShapes(ExtractNukeShapes):
     """Extract node as Shake Shapes."""
+    families = ["matteshapes"]
     label = "Extract Shape Shapes"
     extension = "ssf"
     io_module = "Shake 4.x SSF"
