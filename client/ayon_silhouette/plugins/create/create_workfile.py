@@ -1,8 +1,7 @@
 import ayon_api
 from ayon_core.pipeline import CreatedInstance, AutoCreator, AYON_INSTANCE_ID
 
-from ayon_silhouette.api.plugin import cache_instance_data
-from ayon_silhouette.api import lib, plugin
+from ayon_silhouette.api import lib
 
 import fx
 
