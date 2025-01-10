@@ -1,5 +1,6 @@
 from ayon_core.pipeline import (
     Creator,
+    LoaderPlugin,
     CreatedInstance,
     AYON_INSTANCE_ID,
     AVALON_INSTANCE_ID
@@ -136,3 +137,8 @@ class SilhouetteCreator(Creator):
                     label="Use selection",
                     default=True)
         ]
+
+
+class SilhouetteLoader(LoaderPlugin):
+    settings_category = "silhouette"
+    hosts = ["silhouette"]
