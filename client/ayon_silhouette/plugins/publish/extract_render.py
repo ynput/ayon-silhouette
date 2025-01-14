@@ -22,7 +22,7 @@ class SilhouetteExtractRender(publish.Extractor):
         path = os.path.join(dir_path, filename)
 
         # TODO: Implement
-        output_node = instance.data["transientData"]["node"]
+        output_node = instance.data["transientData"]["instance_node"]
 
         # Render node in the session
         session = instance.context.data["silhouetteSession"]
