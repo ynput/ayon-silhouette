@@ -62,13 +62,16 @@ class SilhouetteCreator(Creator):
             return
 
         instance_node = None
-        if pre_create_data.get("use_selection"):
+        use_selection = pre_create_data.get("use_selection")
+        selected_nodes = []
+        if use_selection:
             # Allow to imprint on a currently selected node of the same type
             # as this creator would generate. If the node is already imprinted
             # by a Creator then raise an error - otherwise use it as the
             # instance node.
-            selection = fx.selection()
-            for node in selection:
+            selected_nodes = [
+                node for node in fx.selection() if isinstance(node, fx.Node)]
+            for node in selected_nodes:
                 if node.type == self.node_type:
                     data = lib.read(node)
                     if data and data.get("creator_identifier"):
@@ -83,10 +86,16 @@ class SilhouetteCreator(Creator):
         if instance_node is None:
             # Create new node and place it in the scene
             instance_node = fx.Node(self.node_type)
-            instance_node.label = session.uniqueLabel(product_name)
             session.addNode(instance_node)
             lib.set_new_node_position(instance_node)
 
+            # When generating a new instance node and use selection is enabled,
+            # connect to the first selected node with a matching output type
+            if use_selection and selected_nodes:
+                self._connect_input_to_first_matching_candidate(
+                    instance_node, selected_nodes)
+
+        instance_node.label = session.uniqueLabel(product_name)
         fx.activate(instance_node)
 
         # Enforce forward compatibility to avoid the instance to default
@@ -159,6 +168,22 @@ class SilhouetteCreator(Creator):
                     label="Use selection",
                     default=True)
         ]
+
+    def _connect_input_to_first_matching_candidate(self, node, candidates):
+        """Connect the primary input of `node` to the first candidate with
+        an output that has a matching data type."""
+        primary_input = node.primaryInput
+        if not primary_input:
+            return
+
+        allowed_types = set(primary_input.dataTypes)
+        for candidate in candidates:
+            for output in candidate.outputs:
+                if not allowed_types.intersection(output.dataTypes):
+                    continue
+
+                output.connect(primary_input)
+                return
 
 
 class SilhouetteLoader(LoaderPlugin):
