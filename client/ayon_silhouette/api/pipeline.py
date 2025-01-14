@@ -368,5 +368,6 @@ def _generate_default_session():
         # TODO: Generate session from one of the available templates
         #   so that e.g. default paint or roto nodes are available
         #   using maybe AYON setting profiles
+        #   All templates are available in `fx.templates`
         project.addItem(session)
         fx.setActiveSession(session)
