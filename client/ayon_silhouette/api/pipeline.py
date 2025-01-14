@@ -47,9 +47,9 @@ AYON_CONTAINERS = lib.AYON_CONTAINERS
 AYON_CONTEXT_CREATOR_IDENTIFIER = "io.ayon.create.context"
 
 
-def defer(callable):
+def defer(callable, timeout=0):
     """Defer a callable to the next event loop."""
-    QtCore.QTimer.singleShot(0, callable)
+    QtCore.QTimer.singleShot(timeout, callable)
 
 
 class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
@@ -75,6 +75,7 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         self._install_hooks()
 
         register_event_callback("open", on_open)
+        register_event_callback("init", on_init)
 
     def _install_menu(self):
         project_settings = get_current_project_settings()
@@ -297,6 +298,18 @@ def on_open():
     defer(_process)
 
 
+def on_init():
+    # The deferred timeout is to ensure if Silhouette was launched with a
+    # startup file through AYON that Silhouette runs that first before this
+    # gets called. The timeout is arbitrary. It may potentially mean that
+    # a slow loading Silhouette project may not have initialized yet.
+    # Unfortunately this running on the `startupComplete` hook doesn't seem to
+    # mean it runs after the startup project has been loaded.
+    # TODO: Investigate whether we can make this more reliable without a needed
+    #  defer with timeout
+    defer(_generate_default_session, timeout=500)
+
+
 def _on_set_resolution():
     """Set active session resolution based on current task attributes."""
     session = fx.activeSession()
@@ -313,3 +326,47 @@ def _on_set_frame_range():
         return
     task_entity = get_current_task_entity()
     lib.set_frame_range_from_entity(session, task_entity)
+
+
+def _generate_default_session():
+    """Create a project and session using the current context task attributes.
+
+    This is called on startup to ensure a session is available for the user
+    that matches the expected frame range and resolution.
+
+    """
+    if fx.activeProject():
+        # An existing project is already open, so we do not initialize
+        return
+
+    entity = get_current_task_entity()
+    attrib = entity["attrib"]
+    frame_start = attrib["frameStart"]
+    frame_end = attrib["frameEnd"]
+    fps = attrib["fps"]
+    resolution_width = attrib["resolutionWidth"]
+    resolution_height = attrib["resolutionHeight"]
+    pixel_aspect = attrib["pixelAspect"]
+
+    with lib.undo_chunk("Creating initial session"):
+        project = fx.activeProject()
+        if not project:
+            project = fx.Project()
+            fx.setActiveProject(project)
+
+        session = fx.Session(
+            width=resolution_width,
+            height=resolution_height,
+            pixelAspect=pixel_aspect,
+            # TODO: Define a better default name? Or make customizable?
+            label="Main"
+        )
+        session.frameRate = fps
+        session.startFrame = frame_start
+        session.duration = frame_end - frame_start + 1
+
+        # TODO: Generate session from one of the available templates
+        #   so that e.g. default paint or roto nodes are available
+        #   using maybe AYON setting profiles
+        project.addItem(session)
+        fx.setActiveSession(session)
