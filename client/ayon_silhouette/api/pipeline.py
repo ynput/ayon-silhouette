@@ -55,9 +55,6 @@ def defer(callable, timeout=0):
 class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
     name = "silhouette"
 
-    def __init__(self):
-        super(SilhouetteHost, self).__init__()
-
     def install(self):
         # process path mapping
         # dirmap_processor = SilhouetteDirmap("silhouette", project_settings)
