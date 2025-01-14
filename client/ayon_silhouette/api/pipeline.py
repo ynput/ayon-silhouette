@@ -104,10 +104,15 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
                 "version_up_current_workfile"):
                     action = menu.addAction("Version Up Workfile")
                     action.triggered.connect(version_up_current_workfile)
-                    menu.addSeparator()
         except KeyError:
             print("Version Up Workfile setting not found in "
                   "Core Settings. Please update Core Addon")
+
+        action = menu.addAction("Work Files...")
+        action.triggered.connect(
+            lambda: host_tools.show_workfiles(parent=parent)
+        )
+        menu.addSeparator()
 
         action = menu.addAction("Create...")
         action.triggered.connect(
@@ -137,10 +142,6 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         )
 
         menu.addSeparator()
-        action = menu.addAction("Work Files...")
-        action.triggered.connect(
-            lambda: host_tools.show_workfiles(parent=parent)
-        )
 
         action = menu.addAction("Set Frame Range")
         action.setToolTip("Set active session frame range")
