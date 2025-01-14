@@ -3,7 +3,8 @@ from ayon_core.pipeline import (
     LoaderPlugin,
     CreatedInstance,
     AYON_INSTANCE_ID,
-    AVALON_INSTANCE_ID
+    AVALON_INSTANCE_ID,
+    CreatorError,
 )
 from ayon_core.lib import BoolDef
 from . import lib
@@ -60,11 +61,32 @@ class SilhouetteCreator(Creator):
         if not session:
             return
 
-        # Create new node and place it in the scene
-        instance_node = fx.Node(self.node_type)
-        instance_node.label = session.uniqueLabel(product_name)
-        session.addNode(instance_node)
-        lib.set_new_node_position(instance_node)
+        instance_node = None
+        if pre_create_data.get("use_selection"):
+            # Allow to imprint on a currently selected node of the same type
+            # as this creator would generate. If the node is already imprinted
+            # by a Creator then raise an error - otherwise use it as the
+            # instance node.
+            selection = fx.selection()
+            for node in selection:
+                if node.type == self.node_type:
+                    data = lib.read(node)
+                    if data and data.get("creator_identifier"):
+                        raise CreatorError(
+                            "Selected node is already imprinted by a Creator."
+                        )
+                    instance_node = node
+                    self.log.debug(
+                        f"Using selected node as instance node: {node.label}")
+                    break
+
+        if instance_node is None:
+            # Create new node and place it in the scene
+            instance_node = fx.Node(self.node_type)
+            instance_node.label = session.uniqueLabel(product_name)
+            session.addNode(instance_node)
+            lib.set_new_node_position(instance_node)
+
         fx.activate(instance_node)
 
         # Enforce forward compatibility to avoid the instance to default
