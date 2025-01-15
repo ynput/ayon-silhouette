@@ -11,12 +11,14 @@ class SilhouetteExtractRender(publish.Extractor):
     families = ["render"]
 
     def process(self, instance):
+        # TODO: Collect colorspace?
+        # TODO: Support alpha + depth channels?
+        # TODO: Support multiple views (L/R)?
 
         # Collect the start and end including handles
         start = instance.data["frameStartHandle"]
         end = instance.data["frameEndHandle"]
 
-        # TODO: Implement
         output_node = instance.data["transientData"]["instance_node"]
 
         # Render node in the session
