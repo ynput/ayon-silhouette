@@ -335,6 +335,7 @@ def _generate_default_session():
     """
     if fx.activeProject():
         # An existing project is already open, so we do not initialize
+        log.debug("Skipping default session creation, project already exists.")
         return
 
     entity = get_current_task_entity()
