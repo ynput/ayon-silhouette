@@ -42,8 +42,7 @@ class SilhouetteTemplateBuilder(AbstractTemplateBuilder):
         # TODO: Do we need to do something with the object list
 
         # Clear any selection if it occurred on load or import
-        fx.select(None)
-        fx.activate(None)
+        fx.select([])
 
         return True
 
