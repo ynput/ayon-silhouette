@@ -4,13 +4,13 @@ from ayon_core.pipeline import publish
 
 import fx
 from tools.renderer import Renderer
+from tools.progress import CommandLineProgress
 
 
 def get_progress_handler(allow_popup=True):
     if fx.gui and allow_popup:
         return fx.PreviewProgressHandler()
     else:
-        from tools.progress import CommandLineProgress
         return CommandLineProgress()
 
 
