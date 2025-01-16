@@ -5,6 +5,7 @@ import logging
 from typing import Optional
 
 from ayon_core.lib import NumberDef
+from ayon_core.pipeline.context_tools import get_current_task_entity
 
 import fx
 import tools.window
@@ -226,3 +227,17 @@ def set_frame_range_from_entity(session, task_entity):
     session.startFrame = frame_start
     session.duration = frame_end - frame_start + 1
     fx.endUndo()
+
+
+def reset_session_settings(session=None, task_entity=None):
+    """Reset the session settings to the task context defaults."""
+    if session is None:
+        session = fx.activeSession()
+        assert session
+
+    if task_entity is None:
+        task_entity = get_current_task_entity()
+
+    with undo_chunk("Reset session settings"):
+        set_resolution_from_entity(session, task_entity)
+        set_frame_range_from_entity(session, task_entity)

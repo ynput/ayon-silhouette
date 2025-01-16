@@ -11,9 +11,11 @@ from ayon_core.tools.utils import host_tools
 from ayon_core.pipeline import (
     register_loader_plugin_path,
     register_creator_plugin_path,
+    register_workfile_build_plugin_path,
     # AYON_CONTAINER_ID,
     AYON_INSTANCE_ID,
     get_current_context,
+    registered_host
 )
 from ayon_core.pipeline.load import any_outdated_containers
 from ayon_core.lib import emit_event, register_event_callback
@@ -22,6 +24,7 @@ from ayon_core.pipeline.context_tools import (
     get_current_task_entity
 )
 from ayon_core.settings import get_current_project_settings
+from ayon_core.tools.workfile_template_build import open_template_ui
 from .workio import (
     open_file,
     save_file,
@@ -30,6 +33,12 @@ from .workio import (
     current_file
 )
 from . import lib
+from .workfile_template_builder import (
+    SilhouetteTemplateBuilder,
+    create_placeholder,
+    update_placeholder,
+    build_workfile_template,
+)
 
 import fx
 import hook
@@ -42,6 +51,7 @@ PUBLISH_PATH = os.path.join(PLUGINS_DIR, "publish")
 LOAD_PATH = os.path.join(PLUGINS_DIR, "load")
 CREATE_PATH = os.path.join(PLUGINS_DIR, "create")
 INVENTORY_PATH = os.path.join(PLUGINS_DIR, "inventory")
+WORKFILE_BUILD_PATH = os.path.join(PLUGINS_DIR, "workfile_build")
 
 AYON_CONTAINERS = lib.AYON_CONTAINERS
 AYON_CONTEXT_CREATOR_IDENTIFIER = "io.ayon.create.context"
@@ -67,6 +77,7 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         register_creator_plugin_path(CREATE_PATH)
         # TODO: Register only when any inventory actions are created
         # register_inventory_action_path(INVENTORY_PATH)
+        register_workfile_build_plugin_path(WORKFILE_BUILD_PATH)
 
         defer(self._install_menu)
         self._install_hooks()
@@ -147,6 +158,34 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         action = menu.addAction("Set Resolution")
         action.setToolTip("Set active session resolution")
         action.triggered.connect(_on_set_resolution)
+
+        menu.addSeparator()
+
+        # region Workfile templates
+        menu_template = menu.addMenu("Template Builder")
+
+        action = menu_template.addAction("Build Workfile from template")
+        action.triggered.connect(lambda: build_workfile_template())
+
+        menu_template.addSeparator()
+
+        action = menu_template.addAction("Open template")
+
+        def _open_template_ui():
+            open_template_ui(
+                SilhouetteTemplateBuilder(
+                    registered_host()),
+                    lib.get_main_window()
+            )
+
+        action.triggered.connect(_open_template_ui)
+
+        action = menu_template.addAction("Create Place Holder")
+        action.triggered.connect(create_placeholder)
+
+        action = menu_template.addAction("Update Place Holder")
+        action.triggered.connect(update_placeholder)
+        # endregion
 
         menu.addSeparator()
         action = menu.addAction("Experimental Tools...")
@@ -338,15 +377,6 @@ def _generate_default_session():
         log.debug("Skipping default session creation, project already exists.")
         return
 
-    entity = get_current_task_entity()
-    attrib = entity["attrib"]
-    frame_start = attrib["frameStart"]
-    frame_end = attrib["frameEnd"]
-    fps = attrib["fps"]
-    resolution_width = attrib["resolutionWidth"]
-    resolution_height = attrib["resolutionHeight"]
-    pixel_aspect = attrib["pixelAspect"]
-
     with lib.undo_chunk("Creating initial session"):
         project = fx.activeProject()
         if not project:
@@ -354,15 +384,10 @@ def _generate_default_session():
             fx.setActiveProject(project)
 
         session = fx.Session(
-            width=resolution_width,
-            height=resolution_height,
-            pixelAspect=pixel_aspect,
             # TODO: Define a better default name? Or make customizable?
             label="Main"
         )
-        session.frameRate = fps
-        session.startFrame = frame_start
-        session.duration = frame_end - frame_start + 1
+        lib.reset_session_settings(session)
 
         # TODO: Generate session from one of the available templates
         #   so that e.g. default paint or roto nodes are available
