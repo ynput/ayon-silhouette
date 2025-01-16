@@ -81,6 +81,7 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
 
         return item
 
+    @lib.undo_chunk("Update placeholder")
     def update_placeholder(self,
                            placeholder_item: PlaceholderItem,
                            placeholder_data: dict):
@@ -133,6 +134,7 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
     def _parse_placeholder_node_data(self, node) -> dict:
         return read(node, key=self.data_key)
 
+    @lib.undo_chunk("Delete placeholder")
     def delete_placeholder(self, placeholder: PlaceholderItem):
         """Remove placeholder if building was successful"""
         node = placeholder.transient_data["node"]  # noqa
@@ -140,6 +142,7 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
         session.removeNode(node)
 
 
+@lib.undo_chunk("Build workfile template")
 def build_workfile_template(*args, **kwargs):
     builder = SilhouetteTemplateBuilder(registered_host())
     builder.build_template(*args, **kwargs)
@@ -150,6 +153,7 @@ def build_workfile_template(*args, **kwargs):
         reset_session_settings(session)
 
 
+@lib.undo_chunk("Update workfile template")
 def update_workfile_template(*args):
     builder = SilhouetteTemplateBuilder(registered_host())
     builder.rebuild_template()
