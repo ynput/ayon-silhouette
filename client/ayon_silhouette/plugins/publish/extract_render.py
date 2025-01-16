@@ -2,7 +2,16 @@ import os
 
 from ayon_core.pipeline import publish
 
+import fx
 from tools.renderer import Renderer
+
+
+def get_progress_handler(allow_popup=True):
+    if fx.gui and allow_popup:
+        return fx.PreviewProgressHandler()
+    else:
+        from tools.progress import CommandLineProgress
+        return CommandLineProgress()
 
 
 class SilhouetteExtractRender(publish.Extractor):
@@ -24,16 +33,13 @@ class SilhouetteExtractRender(publish.Extractor):
         # Render node in the session
         session = instance.context.data["silhouetteSession"]
         renderer = Renderer()
-        # progress = PreviewProgressHandler()
-        # progress.preview = True
-        # progress.pixelAspect = session.pixelAspect
         finished = renderer.render({
                 "session": session,
                 "nodes": [output_node],
                 # Override frame range
                 # "frames": list(range(start, end+1))
             },
-            # progress=progress
+            progress=get_progress_handler()
         )
 
         if not finished:
