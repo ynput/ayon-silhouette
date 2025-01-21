@@ -372,13 +372,14 @@ def _generate_default_session():
     that matches the expected frame range and resolution.
 
     """
-    if fx.activeProject():
+    project = fx.activeProject()
+    if project and project.sessions:
         # An existing project is already open, so we do not initialize
-        log.debug("Skipping default session creation, project already exists.")
+        print("Skipping default session creation, "
+              "project with sessions already active.")
         return
 
     with lib.undo_chunk("Creating initial session"):
-        project = fx.activeProject()
         if not project:
             project = fx.Project()
             fx.setActiveProject(project)
