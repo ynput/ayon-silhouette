@@ -344,6 +344,7 @@ def on_init():
     # mean it runs after the startup project has been loaded.
     # TODO: Investigate whether we can make this more reliable without a needed
     #  defer with timeout
+    #  See: https://forum.borisfx.com/t/19547
     defer(_generate_default_session, timeout=500)
 
 
