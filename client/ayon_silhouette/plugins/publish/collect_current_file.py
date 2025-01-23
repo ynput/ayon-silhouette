@@ -1,5 +1,5 @@
 import pyblish.api
-from ayon_silhouette import api
+from ayon_core.pipeline import registered_host
 
 
 class CollectSilhouetteCurrentFile(pyblish.api.ContextPlugin):
@@ -11,7 +11,8 @@ class CollectSilhouetteCurrentFile(pyblish.api.ContextPlugin):
 
     def process(self, context):
         """Inject the current working file"""
-        current_file = api.current_file()
+        host = registered_host()
+        current_file = host.get_current_workfile()
         context.data['currentFile'] = current_file
         if not current_file:
             self.log.warning(
