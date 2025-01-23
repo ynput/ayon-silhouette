@@ -1,3 +1,5 @@
+import fx
+
 from ayon_core.pipeline import (
     Creator,
     LoaderPlugin,
@@ -8,8 +10,6 @@ from ayon_core.pipeline import (
 )
 from ayon_core.lib import BoolDef
 from . import lib
-
-import fx
 
 
 def cache_instance_data(shared_data):
