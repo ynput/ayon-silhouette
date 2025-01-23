@@ -18,3 +18,5 @@ class CollectSilhouetteCurrentFile(pyblish.api.ContextPlugin):
             self.log.warning(
                 "Current file is not saved. Save the file before continuing."
             )
+        else:
+            self.log.debug(f"Current file: {current_file}")
