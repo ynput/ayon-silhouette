@@ -41,7 +41,7 @@ class CreateWorkfile(AutoCreator):
                 task_entity,
                 variant,
                 host_name,
-                project_entity=self.create_context.get_current_project_entity()
+                project_entity=project_entity
             )
             data = {
                 "folderPath": folder_path,
