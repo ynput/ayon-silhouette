@@ -10,7 +10,7 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
     """Extract After Effects .txt track from Sillhouette."""
     label = "Extract After Effects .txt"
     hosts = ["silhouette"]
-    families = ["matteshapes"]
+    families = ["trackpoints"]
 
     extension = "txt"
     io_module = "After Effects"
