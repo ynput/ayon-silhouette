@@ -25,13 +25,6 @@ from ayon_core.pipeline.context_tools import (
 )
 from ayon_core.settings import get_current_project_settings
 from ayon_core.tools.workfile_template_build import open_template_ui
-from .workio import (
-    open_file,
-    save_file,
-    file_extensions,
-    has_unsaved_changes,
-    current_file
-)
 from . import lib
 from .workfile_template_builder import (
     SilhouetteTemplateBuilder,
@@ -60,6 +53,10 @@ AYON_CONTEXT_CREATOR_IDENTIFIER = "io.ayon.create.context"
 def defer(callable, timeout=0):
     """Defer a callable to the next event loop."""
     QtCore.QTimer.singleShot(timeout, callable)
+
+
+def _get_project() -> "fx.Project":
+    return fx.activeProject()
 
 
 class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
@@ -206,19 +203,31 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         # TODO: Detect a "save into another context" similar to Maya
 
     def open_workfile(self, filepath):
-        return open_file(filepath)
+        return fx.loadProject(filepath)
 
     def save_workfile(self, filepath=None):
-        return save_file(filepath)
+        project = _get_project()
+        if not project:
+            return
+
+        # Consider `None` value to be saving into current project path
+        args = (filepath,) if filepath else ()
+        return project.save(*args)
 
     def get_current_workfile(self):
-        return current_file()
+        project = _get_project()
+        if not project:
+            return
+        return project.path
 
     def workfile_has_unsaved_changes(self):
-        return has_unsaved_changes()
+        project = _get_project()
+        if not project:
+            return False
+        return project.is_modified
 
     def get_workfile_extensions(self):
-        return file_extensions()
+        return [".sfx"]
 
     def get_containers(self):
         return iter_containers()
