@@ -22,16 +22,16 @@ class CollectWorkfileData(pyblish.api.InstancePlugin):
 
         data = {  # noqa
             "setMembers": [current_file],
-            "frameStart": context.data['frameStart'],
-            "frameEnd": context.data['frameEnd'],
-            "handleStart": context.data['handleStart'],
-            "handleEnd": context.data['handleEnd']
+            "frameStart": context.data["frameStart"],
+            "frameEnd": context.data["frameEnd"],
+            "handleStart": context.data["handleStart"],
+            "handleEnd": context.data["handleEnd"]
         }
 
-        data['representations'] = [{
-            'name': ext.lstrip("."),
-            'ext': ext.lstrip("."),
-            'files': file,
+        data["representations"] = [{
+            "name": ext.lstrip("."),
+            "ext": ext.lstrip("."),
+            "files": file,
             "stagingDir": folder,
         }]
 

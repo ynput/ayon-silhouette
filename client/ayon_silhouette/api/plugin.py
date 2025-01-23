@@ -49,7 +49,7 @@ def cache_instance_data(shared_data):
 
 
 class SilhouetteCreator(Creator):
-    default_variants = ['Main']
+    default_variants = ["Main"]
     settings_category = "silhouette"
 
     node_type = "OutputNode"
@@ -98,9 +98,6 @@ class SilhouetteCreator(Creator):
         instance_node.label = session.uniqueLabel(product_name)
         fx.activate(instance_node)
 
-        # Enforce forward compatibility to avoid the instance to default
-        # to the legacy `AVALON_INSTANCE_ID`
-        instance_data["id"] = AYON_INSTANCE_ID
         # Use the uniqueness of the node in Silhouette as the instance id
         instance_data["instance_id"] = instance_node.id
         instance = CreatedInstance(
@@ -179,11 +176,9 @@ class SilhouetteCreator(Creator):
         allowed_types = set(primary_input.dataTypes)
         for candidate in candidates:
             for output in candidate.outputs:
-                if not allowed_types.intersection(output.dataTypes):
-                    continue
-
-                output.connect(primary_input)
-                return
+                if allowed_types.intersection(output.dataTypes):
+                    output.connect(primary_input)
+                    return
 
 
 class SilhouetteLoader(LoaderPlugin):

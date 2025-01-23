@@ -86,7 +86,6 @@ def maintained_selection():
         yield
     finally:
         fx.select(previous_selection)
-        pass
 
 
 @contextlib.contextmanager
@@ -186,8 +185,10 @@ def set_new_node_position(node):
     else:
         bounds = fx.trees.bounds
         size = fx.trees.nodeSize(node)
-        pos = fx.Point(bounds.right - size.x / 2,
-                    bounds.top + size.y / 2)
+        pos = fx.Point(
+            bounds.right - size.x / 2,
+            bounds.top + size.y / 2
+        )
     node.setState("graph.pos", pos)
 
 
@@ -199,14 +200,11 @@ def set_resolution_from_entity(session, task_entity):
         task_entity (dict): Task entity.
 
     """
-    resolution_width = task_entity["attrib"]["resolutionWidth"]
-    resolution_height = task_entity["attrib"]["resolutionHeight"]
-    pixel_aspect = task_entity["attrib"]["pixelAspect"]
-
+    task_attrib = task_entity["attrib"]
     fx.beginUndo("Set session resolution")
-    session.width = resolution_width
-    session.height = resolution_height
-    session.pixelAspect = pixel_aspect
+    session.width = task_attrib["resolutionWidth"]
+    session.height = task_attrib["resolutionHeight"]
+    session.pixelAspect = task_attrib["pixelAspect"]
     fx.endUndo()
 
 
@@ -225,7 +223,7 @@ def set_frame_range_from_entity(session, task_entity):
     fx.beginUndo("Set session frame range")
     session.frameRate = fps
     session.startFrame = frame_start
-    session.duration = frame_end - frame_start + 1
+    session.duration = (frame_end - frame_start) + 1
     fx.endUndo()
 
 

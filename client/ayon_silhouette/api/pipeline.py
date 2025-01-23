@@ -315,27 +315,31 @@ def on_open():
     def _process():
         from ayon_core.tools.utils import SimplePopup
 
-        if any_outdated_containers():
-            log.warning("Project has outdated content.")
+        if not any_outdated_containers():
+            return
 
-            # Find maya main window
-            parent = lib.get_main_window()
-            if parent is None:
-                log.info("Skipping outdated content pop-up "
-                         "because Silhouette window can't be found.")
-            else:
+        log.warning("Project has outdated content.")
 
-                # Show outdated pop-up
-                def _on_show_inventory():
-                    host_tools.show_scene_inventory(parent=parent)
+        # Find maya main window
+        parent = lib.get_main_window()
+        if parent is None:
+            log.info(
+                "Skipping outdated content pop-up"
+                " because Silhouette window can't be found.")
+            return
 
-                dialog = SimplePopup(parent=parent)
-                dialog.setWindowTitle(
-                    "Silhouette project has outdated content")
-                dialog.set_message("There are outdated containers in "
-                                  "your Silhouette project.")
-                dialog.on_clicked.connect(_on_show_inventory)
-                dialog.show()
+        # Show outdated pop-up
+        def _on_show_inventory():
+            host_tools.show_scene_inventory(parent=parent)
+
+        dialog = SimplePopup(parent=parent)
+        dialog.setWindowTitle(
+            "Silhouette project has outdated content")
+        dialog.set_message(
+            "There are outdated containers in"
+            " your Silhouette project.")
+        dialog.on_clicked.connect(_on_show_inventory)
+        dialog.show()
 
     # Even though the hook is 'post_load' it seems the project isn't actually
     # active directly, so we defer the actual callback here for now to ensure
