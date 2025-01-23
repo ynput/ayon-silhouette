@@ -6,15 +6,14 @@ from ayon_silhouette.api import lib
 import fx
 
 
-class ExtractNukeShapes(publish.Extractor):
-    """Extract node as Nuke 9+ Shapes."""
-
-    label = "Extract Nuke 9+ Shapes"
+class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
+    """Extract After Effects .txt track from Sillhouette."""
+    label = "Extract After Effects .txt"
     hosts = ["silhouette"]
-    families = ["trackpoints", "matteshapes"]
+    families = ["matteshapes"]
 
-    extension = "nk"
-    io_module = "Nuke 9+ Shapes"
+    extension = "txt"
+    io_module = "After Effects"
 
     def process(self, instance):
 
@@ -23,6 +22,7 @@ class ExtractNukeShapes(publish.Extractor):
         filename = "{0}.{1}".format(instance.name, self.extension)
         path = os.path.join(dir_path, filename)
 
+        # Node should be a node that contains 'tracker' children
         node = instance.data["transientData"]["instance_node"]
         shapes = node.children
 
@@ -39,28 +39,3 @@ class ExtractNukeShapes(publish.Extractor):
         instance.data.setdefault("representations", []).append(representation)
 
         self.log.info(f"Extracted instance '{instance.name}' to: {path}")
-
-
-class ExtractFusionShapes(ExtractNukeShapes):
-    """Extract node as Fusion Shapes."""
-    # TODO: Suppress a pop-up dialog
-    families = ["matteshapes"]
-    label = "Extract Fusion Shapes"
-    extension = "setting"
-    io_module = "Fusion Shapes"
-
-
-class ExtractSilhouetteShapes(ExtractNukeShapes):
-    """Extract node as Silhouette Shapes."""
-    families = ["matteshapes"]
-    label = "Extract Silhouette Shapes"
-    extension = "fxs"
-    io_module = "Silhouette Shapes"
-
-
-class ExtractShakeShapes(ExtractNukeShapes):
-    """Extract node as Shake Shapes."""
-    families = ["matteshapes"]
-    label = "Extract Shape Shapes"
-    extension = "ssf"
-    io_module = "Shake 4.x SSF"
