@@ -3,11 +3,6 @@ from ayon_core.pipeline.workfile.workfile_template_builder import (
     PlaceholderCreateMixin,
 )
 
-
-import ayon_silhouette.api.workfile_template_builder
-import importlib
-importlib.reload(ayon_silhouette.api.workfile_template_builder)
-
 from ayon_silhouette.api.workfile_template_builder import (
     SilhouettePlaceholderPlugin
 )
