@@ -62,6 +62,8 @@ def _get_project() -> "fx.Project":
 class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
     name = "silhouette"
 
+    context_data_key = "AYON_context"
+
     def install(self):
         # process path mapping
         # dirmap_processor = SilhouetteDirmap("silhouette", project_settings)
@@ -248,13 +250,13 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
                 " there is no active project.")
             return
 
-        lib.imprint(project, data, key="AYON_context")
+        lib.imprint(project, data, key=self.context_data_key)
 
     def get_context_data(self):
         project = _get_project()
         if not project:
             return {}
-        return lib.read(project, key="AYON_context") or {}
+        return lib.read(project, key=self.context_data_key) or {}
 
 
 def parse_container(source, project=None):
