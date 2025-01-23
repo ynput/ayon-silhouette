@@ -203,11 +203,10 @@ def set_resolution_from_entity(session, task_entity):
 
     """
     task_attrib = task_entity["attrib"]
-    fx.beginUndo("Set session resolution")
-    session.width = task_attrib["resolutionWidth"]
-    session.height = task_attrib["resolutionHeight"]
-    session.pixelAspect = task_attrib["pixelAspect"]
-    fx.endUndo()
+    with undo_chunk("Set session resolution"):
+        session.width = task_attrib["resolutionWidth"]
+        session.height = task_attrib["resolutionHeight"]
+        session.pixelAspect = task_attrib["pixelAspect"]
 
 
 def set_frame_range_from_entity(session, task_entity):
@@ -222,11 +221,10 @@ def set_frame_range_from_entity(session, task_entity):
     frame_end = task_entity["attrib"]["frameEnd"]
     fps = task_entity["attrib"]["fps"]
 
-    fx.beginUndo("Set session frame range")
-    session.frameRate = fps
-    session.startFrame = frame_start
-    session.duration = (frame_end - frame_start) + 1
-    fx.endUndo()
+    with undo_chunk("Set session frame range"):
+        session.frameRate = fps
+        session.startFrame = frame_start
+        session.duration = (frame_end - frame_start) + 1
 
 
 def reset_session_settings(session=None, task_entity=None):
