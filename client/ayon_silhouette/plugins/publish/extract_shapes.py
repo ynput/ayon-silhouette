@@ -24,7 +24,9 @@ class ExtractNukeShapes(publish.Extractor):
         path = os.path.join(dir_path, filename)
 
         node = instance.data["transientData"]["instance_node"]
-        shapes = node.children
+        shapes = [
+            shape for shape in node.children if isinstance(shape, fx.Shape)
+        ]
 
         with lib.maintained_selection():
             fx.select(shapes)
