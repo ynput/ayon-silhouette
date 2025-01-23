@@ -17,6 +17,9 @@ class CreateWorkfile(AutoCreator):
 
     def create(self):
         """Create workfile instances."""
+        if not fx.activeProject():
+            return
+
         workfile_instance = next(
             (
                 instance for instance in self.create_context.instances
@@ -87,6 +90,8 @@ class CreateWorkfile(AutoCreator):
             workfile_instance["folderPath"] = folder_path
             workfile_instance["task"] = task_name
             workfile_instance["productName"] = product_name
+
+        workfile_instance.transient_data["project"] = fx.activeProject()
 
     def collect_instances(self):
 
