@@ -241,10 +241,20 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         if not data:
             return
 
-        # TODO: Implement this
+        project = _get_project()
+        if not project:
+            self.log.warning(
+                "Unable to save context data because"
+                " there is no active project.")
+            return
+
+        lib.imprint(project, data, key="AYON_context")
 
     def get_context_data(self):
-        return {}
+        project = _get_project()
+        if not project:
+            return {}
+        return lib.read(project, key="AYON_context") or {}
 
 
 def parse_container(source, project=None):
