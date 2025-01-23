@@ -24,10 +24,13 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
 
         # Node should be a node that contains 'tracker' children
         node = instance.data["transientData"]["instance_node"]
-        shapes = node.children
+        trackers = [
+            tracker for tracker in node.children
+            if isinstance(tracker, fx.Tracker)
+        ]
 
         with lib.maintained_selection():
-            fx.select(shapes)
+            fx.select(trackers)
             self.log.debug(f"Exporting '{self.io_module}' to: {path}")
             fx.io_modules[self.io_module].export(path)
 
