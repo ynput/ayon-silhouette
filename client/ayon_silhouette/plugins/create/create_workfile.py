@@ -1,4 +1,3 @@
-import ayon_api
 from ayon_core.pipeline import CreatedInstance, AutoCreator, AYON_INSTANCE_ID
 
 from ayon_silhouette.api import lib
@@ -14,6 +13,7 @@ class CreateWorkfile(AutoCreator):
     icon = "fa5.file"
 
     project_property_name = "AYON_workfile"
+    default_variant = "Main"
 
     def create(self):
         """Create workfile instances."""
@@ -25,33 +25,28 @@ class CreateWorkfile(AutoCreator):
             None,
         )
 
-        project_name = self.project_name
-        folder_path = self.create_context.get_current_folder_path()
-        task_name = self.create_context.get_current_task_name()
+        project_entity = self.create_context.get_current_project_entity()
+        project_name = project_entity["name"]
+        folder_entity = self.create_context.get_current_folder_entity()
+        folder_path = folder_entity["path"]
+        task_entity = self.create_context.get_current_task_entity()
+        task_name = task_entity["name"]
         host_name = self.create_context.host_name
 
-        existing_folder_path = None
-        if workfile_instance is not None:
-            existing_folder_path = workfile_instance.get("folderPath")
-
+        variant = self.default_variant
         if not workfile_instance:
-            folder_entity = ayon_api.get_folder_by_path(
-                project_name, folder_path
-            )
-            task_entity = ayon_api.get_task_by_name(
-                project_name, folder_entity["id"], task_name
-            )
             product_name = self.get_product_name(
                 project_name,
                 folder_entity,
                 task_entity,
-                task_name,
+                variant,
                 host_name,
+                project_entity=self.create_context.get_current_project_entity()
             )
             data = {
                 "folderPath": folder_path,
                 "task": task_name,
-                "variant": task_name,
+                "variant": variant,
             }
 
             # Enforce forward compatibility to avoid the instance to default
@@ -63,7 +58,7 @@ class CreateWorkfile(AutoCreator):
                     project_name,
                     folder_entity,
                     task_entity,
-                    task_name,
+                    variant,
                     host_name,
                     workfile_instance,
                 )
@@ -75,22 +70,18 @@ class CreateWorkfile(AutoCreator):
             self._add_instance_to_context(workfile_instance)
 
         elif (
-            existing_folder_path != folder_path
+            workfile_instance["folderPath"] != folder_path
             or workfile_instance["task"] != task_name
         ):
             # Update instance context if it's different
-            folder_entity = ayon_api.get_folder_by_path(
-                project_name, folder_path
-            )
-            task_entity = ayon_api.get_task_by_name(
-                project_name, folder_entity["id"], task_name
-            )
             product_name = self.get_product_name(
                 project_name,
                 folder_entity,
                 task_entity,
-                self.default_variant,
+                variant,
                 host_name,
+                instance=workfile_instance,
+                project_entity=project_entity
             )
 
             workfile_instance["folderPath"] = folder_path
