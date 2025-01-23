@@ -28,6 +28,7 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
 
         with lib.maintained_selection():
             fx.select(shapes)
+            self.log.debug(f"Exporting '{self.io_module}' to: {path}")
             fx.io_modules[self.io_module].export(path)
 
         representation = {
@@ -38,4 +39,4 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
         }
         instance.data.setdefault("representations", []).append(representation)
 
-        self.log.info(f"Extracted instance '{instance.name}' to: {path}")
+        self.log.debug(f"Extracted instance '{instance.name}' to: {path}")
