@@ -119,7 +119,9 @@ def imprint(node, data: Optional[dict], key="AYON"):
         if isinstance(node, fx.Node):
             node.setState(key, None)
         else:
-            node.removeProperty(key)
+            prop = node.property(key)
+            if prop:
+                node.removeProperty(prop)
         return
 
     # Set data
