@@ -115,12 +115,8 @@ class CreateWorkfile(AutoCreator):
         self._add_instance_to_context(created_instance)
 
     def update_instances(self, update_list):
-
-        project = fx.activeProject()
-        if not project:
-            return
-
         for created_inst, _changes in update_list:
+            project = created_inst.transient_data["project"]
             new_data = created_inst.data_to_store()
             new_data.pop("instance_id", None)
             lib.imprint(project, new_data, key=self.project_property_name)
