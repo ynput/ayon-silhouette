@@ -55,7 +55,8 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
     @lib.undo_chunk("Create placeholder")
     def create_placeholder(self, placeholder_data) -> PlaceholderItem:
         session = fx.activeSession()
-        assert session, "Must have active session"
+        if not session:
+            raise RuntimeError("Must have active session.")
 
         placeholder_data["plugin_identifier"] = self.identifier
 
