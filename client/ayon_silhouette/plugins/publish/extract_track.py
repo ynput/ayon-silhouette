@@ -7,7 +7,7 @@ import fx
 
 
 class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
-    """Extract After Effects .txt track from Sillhouette."""
+    """Extract After Effects .txt track from Silhouette."""
     label = "Extract After Effects .txt"
     hosts = ["silhouette"]
     families = ["trackpoints"]
@@ -53,3 +53,13 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
         instance.data.setdefault("representations", []).append(representation)
 
         self.log.debug(f"Extracted instance '{instance.name}' to: {path}")
+
+
+class SilhouetteExtractNuke5Track(SilhouetteExtractAfterEffectsTrack):
+    """Extract Nuke 5 .nk trackers from Silhouette."""
+    label = "Extract Nuke 5 Trackers"
+    hosts = ["silhouette"]
+    families = ["trackpoints"]
+
+    extension = "nk"
+    io_module = "Nuke 5"
