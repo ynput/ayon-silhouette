@@ -220,7 +220,14 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         project = _get_project()
         if not project:
             return
-        return project.path
+
+        # Silhouette workfiles are projects that are actually a folder
+        # of files, instead of a single file. Inside the folder, is a
+        # `project.sfx` file that is the main project file. We want to return
+        # the folder's project bundle path instead of the `project.sfx` file.
+        project_path = project.path
+        if project_path:
+            return os.path.dirname(project_path)
 
     def workfile_has_unsaved_changes(self):
         project = _get_project()
