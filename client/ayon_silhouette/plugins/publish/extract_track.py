@@ -24,10 +24,20 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
 
         # Node should be a node that contains 'tracker' children
         node = instance.data["transientData"]["instance_node"]
-        trackers = [
-            tracker for tracker in node.children
-            if isinstance(tracker, fx.Tracker)
-        ]
+
+
+        # Use selection, if any specified, otherwise use all children shapes
+        tracker_ids = instance.data.get(
+            "creator_attributes", {}).get("trackers")
+        if tracker_ids:
+            trackers = [
+                fx.findObject(tracker_id) for tracker_id in tracker_ids
+            ]
+        else:
+            trackers = [
+                tracker for tracker in node.children
+                if isinstance(tracker, fx.Tracker)
+            ]
 
         with lib.maintained_selection():
             fx.select(trackers)
