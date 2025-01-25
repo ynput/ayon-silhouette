@@ -1,7 +1,7 @@
+import fx
+
 from ayon_core.lib import EnumDef
 from ayon_silhouette.api import plugin
-
-import fx
 
 
 class CreateMatteShapes(plugin.SilhouetteCreator):

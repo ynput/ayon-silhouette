@@ -1,9 +1,9 @@
 import os
 
+import fx
+
 from ayon_core.pipeline import publish
 from ayon_silhouette.api import lib
-
-import fx
 
 
 class ExtractNukeShapes(publish.Extractor):
