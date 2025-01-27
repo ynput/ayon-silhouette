@@ -72,10 +72,11 @@ class SilhouetteCreator(Creator):
             # as this creator would generate. If the node is already imprinted
             # by a Creator then raise an error - otherwise use it as the
             # instance node.
+            valid_node_types = self.valid_node_types or {self.create_node_type}
             selected_nodes = [
                 node for node in fx.selection() if isinstance(node, fx.Node)]
             for node in selected_nodes:
-                if node.type in (self.valid_node_types or self.create_node_type):
+                if node.type in valid_node_types:
                     data = lib.read(node)
                     if data and data.get("creator_identifier"):
                         raise CreatorError(
