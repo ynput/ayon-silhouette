@@ -113,36 +113,38 @@ def imprint(node, data: Optional[dict], key="AYON"):
         node (fx.Object | fx.Node): The selection object
         data (dict): Dictionary of key/value pairs
     """
-
-    # Remove data
-    if data is None:
-        if isinstance(node, fx.Node):
-            node.setState(key, None)
-        else:
-            prop = node.property(key)
-            if prop:
-                node.removeProperty(prop)
-        return
-
-    # Set data
     if isinstance(node, fx.Node):
-        node.setState(key, data)
+        return imprint_state(node, data, key)
     elif isinstance(node, fx.Object):
-        # Serialize data
-        value = json.dumps(data)
-        prop = node.property(key)
-        if not prop:
-            # Create property
-            # Arguments are `id`, `label` and `default_value`. By passing the
-            # default value as empty string we make it a string attribute.
-            prop = fx.Property(key, key, "")
-            prop.hidden = True
-            node.addProperty(prop)
-
-        # Set value
-        prop.value = value
+        return imprint_property(node, data, key)
     else:
         raise TypeError(f"Unsupported node type: {node} ({type(node)})")
+
+
+def imprint_state(node, data, key):
+    node.setState(key, data)
+
+
+def imprint_property(node, data, key):
+    if data is None:
+        prop = node.property(key)
+        if prop:
+            node.removeProperty(prop)
+        return
+
+    # Serialize data
+    value = json.dumps(data)
+    prop = node.property(key)
+    if not prop:
+        # Create property
+        # Arguments are `id`, `label` and `default_value`. By passing the
+        # default value as empty string we make it a string attribute.
+        prop = fx.Property(key, key, "")
+        prop.hidden = True
+        node.addProperty(prop)
+
+    # Set value
+    prop.value = value
 
 
 def read(node, key="AYON") -> Optional[dict]:
@@ -158,25 +160,33 @@ def read(node, key="AYON") -> Optional[dict]:
     """
     if isinstance(node, fx.Node):
         # Use node state instead of property
-        return node.getState(key)
+        return read_state(node, key)
     elif isinstance(node, fx.Object):
         # Project or source items do not have state
-        prop = node.property(key)
-        if not prop:
-            return
-        value = prop.value
-        if not value:
-            return
-
-        try:
-            return json.loads(value)
-        except json.JSONDecodeError as exc:
-            log.error(
-                f"Failed to read '{key}' from node {node}"
-                f" with value {value}: {exc}")
-            return
+        return read_property(node, key)
     else:
         raise TypeError(f"Unsupported node type: {node} ({type(node)})")
+
+
+def read_state(node, key):
+    return node.getState(key)
+
+
+def read_property(node, key):
+    prop = node.property(key)
+    if not prop:
+        return
+    value = prop.value
+    if not value:
+        return
+
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError as exc:
+        log.error(
+            f"Failed to read '{key}' from node {node}"
+            f" with value {value}: {exc}")
+        return
 
 
 def set_new_node_position(node):
