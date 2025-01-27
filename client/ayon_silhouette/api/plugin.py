@@ -10,6 +10,8 @@ from ayon_core.pipeline import (
 from ayon_core.lib import BoolDef
 from . import lib
 
+INSTANCES_DATA_KEY = "AYON_instances"
+
 
 def cache_instance_data(shared_data):
     """Cache instances for Creators shared data.
@@ -31,23 +33,37 @@ def cache_instance_data(shared_data):
 
         instance_ids = {AYON_INSTANCE_ID}
         for node in session.nodes:
-            data = lib.read(node)
-            if not data:
+            instances_data_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY)
+            if not instances_data_by_uuid:
                 continue
 
-            if data.get("id") not in instance_ids:
-                continue
+            for uuid, data in instances_data_by_uuid.items():
+                if data.get("id") not in instance_ids:
+                    continue
 
-            creator_id = data.get("creator_identifier")
-            if not creator_id:
-                continue
+                creator_id = data.get("creator_identifier")
+                if not creator_id:
+                    continue
 
-            cache.setdefault(creator_id, []).append(node)
+                cache.setdefault(creator_id, []).append((node, uuid, data))
 
     return shared_data
 
 
 class SilhouetteCreator(Creator):
+    """Base class for Silhouette creators.
+
+    This base creator can be applied multiple times to a single node, where
+    each instance is stored as a separate imprint on the node, inside an
+    `AYON_instances` state that is a `dict[str, dict]` of instance data per
+    uuid. The `instance_id` will then be defined by the node's id and this uuid
+    as `{node_id}|{uuid}`.
+
+    This way, a single RotoNode can have multiple instances of different
+    product types (or even the same product type) to allow exporting e.g.
+    track points and matte shapes from the same RotoNode.
+
+    """
     default_variants = ["Main"]
     settings_category = "silhouette"
 
@@ -82,7 +98,7 @@ class SilhouetteCreator(Creator):
                             "Selected node is already imprinted by a Creator."
                         )
                     instance_node = node
-                    self.log.debug(
+                    self.log.info(
                         f"Using selected node as instance node: {node.label}")
                     break
 
@@ -98,17 +114,21 @@ class SilhouetteCreator(Creator):
                 self._connect_input_to_first_matching_candidate(
                     instance_node, selected_nodes)
 
-        instance_node.label = session.uniqueLabel(product_name)
+            instance_node.label = session.uniqueLabel(product_name)
         fx.activate(instance_node)
 
         # Use the uniqueness of the node in Silhouette as the instance id
-        instance_data["instance_id"] = instance_node.id
+        node_id = str(instance_node.id)
+        instance_data["node_id"] = node_id
         instance = CreatedInstance(
             product_type=self.product_type,
             product_name=product_name,
             data=instance_data,
             creator=self,
         )
+        # Prepend the node id to the instance id
+        instance_data["instance_id"] = (
+            f"{node_id}|{instance.data['instance_id']}")
 
         # Store the instance data
         data = instance.data_to_store()
@@ -123,11 +143,11 @@ class SilhouetteCreator(Creator):
 
     def collect_instances(self):
         shared_data = cache_instance_data(self.collection_shared_data)
-        for obj in shared_data["silhouette_cached_instances"].get(
+        for obj, uuid, data in shared_data["silhouette_cached_instances"].get(
                 self.identifier, []):
-
-            data = lib.read(obj)
-            data["instance_id"] = str(obj.id)
+            node_id = str(obj.id)
+            data["instance_id"] = f"{node_id}|{uuid}"
+            data["node_id"] = node_id
 
             # Add instance
             created_instance = CreatedInstance.from_existing(data, self)
@@ -159,8 +179,13 @@ class SilhouetteCreator(Creator):
 
     def _imprint(self, node, data):
         # Do not store instance id since it's the Silhouette node id
-        data.pop("instance_id", None)
-        lib.imprint(node, data)
+        data.pop("node_id", None)  # transient-like data
+        instance_id = data.pop("instance_id")
+
+        uuid = instance_id.rsplit("|", 1)[-1]
+        instances_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY) or {}
+        instances_by_uuid[uuid] = data
+        lib.imprint(node, instances_by_uuid, key=INSTANCES_DATA_KEY)
 
     def get_pre_create_attr_defs(self):
         return [

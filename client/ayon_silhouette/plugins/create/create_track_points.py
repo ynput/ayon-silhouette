@@ -1,6 +1,6 @@
 import fx
 
-from ayon_core.lib import EnumDef
+from ayon_core.lib import EnumDef, UILabelDef
 from ayon_silhouette.api import plugin
 
 
@@ -22,7 +22,7 @@ class CreateTrackPoints(plugin.SilhouetteCreator):
         # instance directly, not after transient data was added to the instance
         # in the `create` or `collect` method. So we must find the node by
         # node id.
-        node_id = instance.data.get("instance_id")
+        node_id = instance.data.get("node_id")
         node = fx.findObject(node_id)
 
         if not node:
@@ -49,6 +49,7 @@ class CreateTrackPoints(plugin.SilhouetteCreator):
             })
 
         attr_defs = [
+            UILabelDef(f"<b>Node</b>: {node.label}", key="node_label"),
             EnumDef(
                 "trackers",
                 label="Export trackers",

@@ -1,6 +1,6 @@
 import fx
 
-from ayon_core.lib import EnumDef
+from ayon_core.lib import EnumDef, UILabelDef
 from ayon_silhouette.api import plugin
 
 
@@ -21,7 +21,7 @@ class CreateMatteShapes(plugin.SilhouetteCreator):
         # instance directly, not after transient data was added to the instance
         # in the `create` or `collect` method. So we must find the node by
         # node id.
-        node_id = instance.data.get("instance_id")
+        node_id = instance.data.get("node_id")
         node = fx.findObject(node_id)
 
         if not node:
@@ -47,6 +47,7 @@ class CreateMatteShapes(plugin.SilhouetteCreator):
             })
 
         attr_defs = [
+            UILabelDef(f"Node: {node.label}", key="node_label"),
             EnumDef(
                 "shapes",
                 label="Export shapes",
