@@ -51,7 +51,11 @@ class SilhouetteCreator(Creator):
     default_variants = ["Main"]
     settings_category = "silhouette"
 
-    node_type = "OutputNode"
+    create_node_type = "OutputNode"
+
+    # When `valid_node_types` is set, all these node types are allowed to get
+    # imprinted by this creator
+    valid_node_types = set()
 
     @lib.undo_chunk("Create instance")
     def create(self, product_name, instance_data, pre_create_data):
@@ -71,7 +75,7 @@ class SilhouetteCreator(Creator):
             selected_nodes = [
                 node for node in fx.selection() if isinstance(node, fx.Node)]
             for node in selected_nodes:
-                if node.type == self.node_type:
+                if node.type in (self.valid_node_types or self.create_node_type):
                     data = lib.read(node)
                     if data and data.get("creator_identifier"):
                         raise CreatorError(
@@ -84,7 +88,7 @@ class SilhouetteCreator(Creator):
 
         if instance_node is None:
             # Create new node and place it in the scene
-            instance_node = fx.Node(self.node_type)
+            instance_node = fx.Node(self.create_node_type)
             session.addNode(instance_node)
             lib.set_new_node_position(instance_node)
 

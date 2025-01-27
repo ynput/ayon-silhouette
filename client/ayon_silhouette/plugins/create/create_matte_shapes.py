@@ -13,7 +13,7 @@ class CreateMatteShapes(plugin.SilhouetteCreator):
     product_type = "matteshapes"
     icon = "cubes"
 
-    node_type = "RotoNode"
+    create_node_type = "RotoNode"
 
     def get_attr_defs_for_instance(self, instance):
         # Unfortunately in Creator.get_attr_defs_for_instance we can't access

@@ -13,7 +13,8 @@ class CreateTrackPoints(plugin.SilhouetteCreator):
     product_type = "trackpoints"
     icon = "cubes"
 
-    node_type = "TrackerNode"
+    create_node_type = "TrackerNode"
+    valid_node_types = {"TrackerNode", "RotoNode"}
 
     def get_attr_defs_for_instance(self, instance):
         # Unfortunately in Creator.get_attr_defs_for_instance we can't access
