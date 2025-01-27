@@ -1,4 +1,4 @@
-from ayon_core.pipeline import CreatedInstance, AutoCreator, AYON_INSTANCE_ID
+from ayon_core.pipeline import CreatedInstance, AutoCreator
 
 from ayon_silhouette.api import lib
 
@@ -51,10 +51,6 @@ class CreateWorkfile(AutoCreator):
                 "task": task_name,
                 "variant": variant,
             }
-
-            # Enforce forward compatibility to avoid the instance to default
-            # to the legacy `AVALON_INSTANCE_ID`
-            data["id"] = AYON_INSTANCE_ID
 
             data.update(
                 self.get_dynamic_data(

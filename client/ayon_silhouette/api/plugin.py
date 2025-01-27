@@ -5,7 +5,6 @@ from ayon_core.pipeline import (
     LoaderPlugin,
     CreatedInstance,
     AYON_INSTANCE_ID,
-    AVALON_INSTANCE_ID,
     CreatorError,
 )
 from ayon_core.lib import BoolDef
@@ -30,7 +29,7 @@ def cache_instance_data(shared_data):
         if not session:
             return
 
-        instance_ids = {AYON_INSTANCE_ID, AVALON_INSTANCE_ID}
+        instance_ids = {AYON_INSTANCE_ID}
         for node in session.nodes:
             data = lib.read(node)
             if not data:
