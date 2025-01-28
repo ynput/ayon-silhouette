@@ -82,7 +82,6 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
         button.click()
 
 
-
 class SilhouetteExtractNuke5Track(SilhouetteExtractAfterEffectsTrack):
     """Extract Nuke 5 .nk trackers from Silhouette."""
     label = "Extract Nuke 5 Trackers"
