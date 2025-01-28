@@ -275,11 +275,17 @@ def capture_messageboxes(callback):
                     continue
                 processed.add(widget)
                 callback(widget)
+
+        # Stop as soon as possible with our detections. Even with the
+        # QTimer repeating at interval of 0 we should have been able to
+        # capture all the UI events as they happen in the main thread for
+        # each dialog.
+        # Note: Technically this would mean that as soon as there is no
+        # active messagebox we directly stop the timer, and hence would stop
+        # finding messageboxes after. However, with the export methods in
+        # Silhouette this has not been a problem and all boxes were detected
+        # accordingly.
         if not has_boxes:
-            # Stop as soon as possible with our detections. Even with the
-            # QTimer repeating at interval of 0 we should have been able to
-            # capture all the UI events as they happen in the main thread for
-            # each dialog.
             timer.stop()
 
     timer.setSingleShot(False)  # Allow to capture multiple boxes
