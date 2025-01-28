@@ -121,6 +121,7 @@ class ExtractFusionShapes(ExtractNukeShapes):
         elif messagebox_text == "Link Shapes?":
             click(messagebox, "&Yes")
 
+
 class ExtractSilhouetteShapes(ExtractNukeShapes):
     """Extract node as Silhouette Shapes."""
     families = ["matteshapes"]
