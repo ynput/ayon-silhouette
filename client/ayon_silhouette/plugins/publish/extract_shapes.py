@@ -108,24 +108,18 @@ class ExtractFusionShapes(ExtractNukeShapes):
 
         def click(messagebox: QtWidgets.QMessageBox, text: str):
             """Click QMessageBox button with matching text."""
+            self.log.debug(f"Accepting messagebox with '{text}'")
             button = next(
                 button for button in messagebox.buttons()
                 if button.text() == text
             )
             button.click()
 
-        if messagebox.text() == "Output Fusion Groups?":
-            self.log.debug("Accepting messagebox with '&Yes'")
-            messagebox.hide()
-            # Accept with &Yes
+        messagebox_text = messagebox.text()
+        if messagebox_text == "Output Fusion Groups?":
             click(messagebox, "&Yes")
-
-        if messagebox.text() == "Link Shapes?":
-            self.log.debug("Accepting messagebox with '&Yes'")
-            messagebox.hide()
-            # Accept with &Yes
+        elif messagebox_text == "Link Shapes?":
             click(messagebox, "&Yes")
-
 
 class ExtractSilhouetteShapes(ExtractNukeShapes):
     """Extract node as Silhouette Shapes."""
