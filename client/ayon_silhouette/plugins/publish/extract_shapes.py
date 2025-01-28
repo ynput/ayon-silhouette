@@ -31,7 +31,8 @@ class ExtractNukeShapes(publish.Extractor):
             shapes = [fx.findObject(shape_id) for shape_id in shape_ids]
         else:
             shapes = [
-                shape for shape in node.children if isinstance(shape, fx.Shape)
+                shape for shape, _label in lib.iter_children(node)
+                if isinstance(shape, fx.Shape)
             ]
 
         with lib.maintained_selection():

@@ -249,3 +249,17 @@ def reset_session_settings(session=None, task_entity=None):
     with undo_chunk("Reset session settings"):
         set_resolution_from_entity(session, task_entity)
         set_frame_range_from_entity(session, task_entity)
+
+
+def iter_children(node, prefix=None):
+    """Iterate over all children of a node recursively."""
+    children = node.children
+    if not children:
+        return
+    for child in reversed(children):
+        # Yield with a nested label so we can easily display it nicely
+        label = child.label
+        if prefix:
+            label = f"{prefix} > {label}"
+        yield child, label
+        yield from iter_children(child, prefix=label)

@@ -35,7 +35,7 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
             ]
         else:
             trackers = [
-                tracker for tracker in node.children
+                tracker for tracker, _label in lib.iter_children(node)
                 if isinstance(tracker, fx.Tracker)
             ]
 
