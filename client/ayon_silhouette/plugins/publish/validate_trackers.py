@@ -16,7 +16,8 @@ class ValidateTrackers(pyblish.api.InstancePlugin):
         # Node should be a node that contains 'tracker' children
         node = instance.data["transientData"]["instance_node"]
         if not any(
-            tracker for tracker in node.children
+            tracker
+            for tracker in node.children
             if isinstance(tracker, fx.Tracker)
         ):
             raise publish.PublishValidationError(
