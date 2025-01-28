@@ -4,11 +4,13 @@ import json
 import logging
 from typing import Optional
 
+from qtpy import QtCore, QtWidgets
+import fx
+import tools.window
+
 from ayon_core.lib import NumberDef
 from ayon_core.pipeline.context_tools import get_current_task_entity
 
-import fx
-import tools.window
 
 AYON_CONTAINERS = "AYON_CONTAINERS"
 JSON_PREFIX = "JSON::"
@@ -249,6 +251,50 @@ def reset_session_settings(session=None, task_entity=None):
     with undo_chunk("Reset session settings"):
         set_resolution_from_entity(session, task_entity)
         set_frame_range_from_entity(session, task_entity)
+
+
+@contextlib.contextmanager
+def capture_messageboxes(callback):
+    """Capture messageboxes and call a callback with them.
+
+    This is a workaround for Silhouette not allowing the Python code to
+    suppress messageboxes and supply default answers to them. So instead we
+    capture the messageboxes and respond to them through a rapid QTimer.
+    """
+    processed = set()
+    timer = QtCore.QTimer()
+
+    def on_timeout():
+        # Check for dialogs
+        widgets = QtWidgets.QApplication.instance().topLevelWidgets()
+        has_boxes = False
+        for widget in widgets:
+            if isinstance(widget, QtWidgets.QMessageBox):
+                has_boxes = True
+                if widget in processed:
+                    continue
+                processed.add(widget)
+                callback(widget)
+
+        # Stop as soon as possible with our detections. Even with the
+        # QTimer repeating at interval of 0 we should have been able to
+        # capture all the UI events as they happen in the main thread for
+        # each dialog.
+        # Note: Technically this would mean that as soon as there is no
+        # active messagebox we directly stop the timer, and hence would stop
+        # finding messageboxes after. However, with the export methods in
+        # Silhouette this has not been a problem and all boxes were detected
+        # accordingly.
+        if not has_boxes:
+            timer.stop()
+
+    timer.setSingleShot(False)  # Allow to capture multiple boxes
+    timer.timeout.connect(on_timeout)
+    timer.start()
+    try:
+        yield
+    finally:
+        timer.stop()
 
 
 def iter_children(node, prefix=None):
