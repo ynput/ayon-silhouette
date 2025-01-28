@@ -1,9 +1,49 @@
 import os
+import contextlib
 
+from qtpy import QtCore, QtWidgets
 import fx
 
 from ayon_core.pipeline import publish
 from ayon_silhouette.api import lib
+
+
+@contextlib.contextmanager
+def capture_messageboxes(callback):
+    """Capture messageboxes and call a callback with them.
+
+    This is a workaround for Silhouette not allowing the Python code to
+    suppress messageboxes and supply default answers to them. So instead we
+    capture the messageboxes and respond to them through a rapid QTimer.
+    """
+    processed = set()
+    timer = QtCore.QTimer()
+
+    def on_timeout():
+        # Check for dialogs
+        widgets = QtWidgets.QApplication.instance().topLevelWidgets()
+        has_boxes = False
+        for widget in widgets:
+            if isinstance(widget, QtWidgets.QMessageBox):
+                has_boxes = True
+                if widget in processed:
+                    continue
+                processed.add(widget)
+                callback(widget)
+        if not has_boxes:
+            # Stop as soon as possible with our detections. Even with the
+            # QTimer repeating at interval of 0 we should have been able to
+            # capture all the UI events as they happen in the main thread for
+            # each dialog.
+            timer.stop()
+
+    timer.setSingleShot(False)  # Allow to capture multiple boxes
+    timer.timeout.connect(on_timeout)
+    timer.start()
+    try:
+        yield
+    finally:
+        timer.stop()
 
 
 class ExtractNukeShapes(publish.Extractor):
@@ -37,7 +77,8 @@ class ExtractNukeShapes(publish.Extractor):
         with lib.maintained_selection():
             fx.select(shapes)
             self.log.debug(f"Exporting '{self.io_module}' to: {path}")
-            fx.io_modules[self.io_module].export(path)
+            with capture_messageboxes(self.on_captured_messagebox):
+                fx.io_modules[self.io_module].export(path)
 
         representation = {
             "name": self.extension,
@@ -49,6 +90,10 @@ class ExtractNukeShapes(publish.Extractor):
 
         self.log.debug(f"Extracted instance '{instance.name}' to: {path}")
 
+    def on_captured_messagebox(self, messagebox: QtWidgets.QMessageBox):
+        # Suppress a pop-up dialog
+        self.log.debug(f"Detected messagebox: {messagebox.text()}")
+
 
 class ExtractFusionShapes(ExtractNukeShapes):
     """Extract node as Fusion Shapes."""
@@ -57,6 +102,29 @@ class ExtractFusionShapes(ExtractNukeShapes):
     label = "Extract Fusion Shapes"
     extension = "setting"
     io_module = "Fusion Shapes"
+
+    def on_captured_messagebox(self, messagebox):
+        super().on_captured_messagebox(messagebox)
+
+        def click(messagebox: QtWidgets.QMessageBox, text: str):
+            """Click QMessageBox button with matching text."""
+            button = next(
+                button for button in messagebox.buttons()
+                if button.text() == text
+            )
+            button.click()
+
+        if messagebox.text() == "Output Fusion Groups?":
+            self.log.debug("Accepting messagebox with '&Yes'")
+            messagebox.hide()
+            # Accept with &Yes
+            click(messagebox, "&Yes")
+
+        if messagebox.text() == "Link Shapes?":
+            self.log.debug("Accepting messagebox with '&Yes'")
+            messagebox.hide()
+            # Accept with &Yes
+            click(messagebox, "&Yes")
 
 
 class ExtractSilhouetteShapes(ExtractNukeShapes):
