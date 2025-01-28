@@ -2,7 +2,7 @@
 import contextlib
 import json
 import logging
-from typing import Optional
+from typing import Optional, Iterator, Tuple
 
 from qtpy import QtCore, QtWidgets
 import fx
@@ -297,8 +297,15 @@ def capture_messageboxes(callback):
         timer.stop()
 
 
-def iter_children(node, prefix=None):
-    """Iterate over all children of a node recursively."""
+def iter_children(
+        node: fx.Node,
+        prefix: Optional[str] = None
+) -> Iterator[Tuple[fx.Node, str]]:
+    """Iterate over all children of a node recursively.
+
+    This yields the node together with a label that indicates the full path
+    from the root node passed to the function.
+    """
     children = node.children
     if not children:
         return
