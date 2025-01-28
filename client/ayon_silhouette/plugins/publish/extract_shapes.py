@@ -1,7 +1,7 @@
 import os
 import contextlib
 
-from qtpy import QtCore, QtWidgets
+from qtpy import QtWidgets
 import fx
 
 from ayon_core.pipeline import publish
