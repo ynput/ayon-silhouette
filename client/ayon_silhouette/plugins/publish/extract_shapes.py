@@ -1,5 +1,7 @@
 import os
+import contextlib
 
+from qtpy import QtWidgets
 import fx
 
 from ayon_core.pipeline import publish
@@ -16,6 +18,8 @@ class ExtractNukeShapes(publish.Extractor):
     extension = "nk"
     io_module = "Nuke 9+ Shapes"
 
+    capture_messageboxes = False
+
     def process(self, instance):
 
         # Define extract output file path
@@ -31,13 +35,18 @@ class ExtractNukeShapes(publish.Extractor):
             shapes = [fx.findObject(shape_id) for shape_id in shape_ids]
         else:
             shapes = [
-                shape for shape in node.children if isinstance(shape, fx.Shape)
+                shape for shape, _label in lib.iter_children(node)
+                if isinstance(shape, fx.Shape)
             ]
 
         with lib.maintained_selection():
             fx.select(shapes)
-            self.log.debug(f"Exporting '{self.io_module}' to: {path}")
-            fx.io_modules[self.io_module].export(path)
+            with contextlib.ExitStack() as stack:
+                self.log.debug(f"Exporting '{self.io_module}' to: {path}")
+                if self.capture_messageboxes:
+                    stack.enter_context(
+                        lib.capture_messageboxes(self.on_captured_messagebox))
+                fx.io_modules[self.io_module].export(path)
 
         representation = {
             "name": self.extension,
@@ -49,6 +58,9 @@ class ExtractNukeShapes(publish.Extractor):
 
         self.log.debug(f"Extracted instance '{instance.name}' to: {path}")
 
+    def on_captured_messagebox(self, messagebox: QtWidgets.QMessageBox):
+        pass
+
 
 class ExtractFusionShapes(ExtractNukeShapes):
     """Extract node as Fusion Shapes."""
@@ -57,6 +69,27 @@ class ExtractFusionShapes(ExtractNukeShapes):
     label = "Extract Fusion Shapes"
     extension = "setting"
     io_module = "Fusion Shapes"
+
+    capture_messageboxes = True
+
+    def on_captured_messagebox(self, messagebox):
+        # Suppress pop-up dialogs
+        self.log.debug(f"Detected messagebox: {messagebox.text()}")
+
+        def click(messagebox: QtWidgets.QMessageBox, text: str):
+            """Click QMessageBox button with matching text."""
+            self.log.debug(f"Accepting messagebox with '{text}'")
+            button = next(
+                button for button in messagebox.buttons()
+                if button.text() == text
+            )
+            button.click()
+
+        messagebox_text = messagebox.text()
+        if messagebox_text == "Output Fusion Groups?":
+            click(messagebox, "&Yes")
+        elif messagebox_text == "Link Shapes?":
+            click(messagebox, "&Yes")
 
 
 class ExtractSilhouetteShapes(ExtractNukeShapes):

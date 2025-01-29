@@ -1,4 +1,7 @@
+import contextlib
 import os
+
+from qtpy import QtWidgets
 
 import fx
 
@@ -15,6 +18,8 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
     extension = "txt"
     io_module = "After Effects"
 
+    capture_messageboxes = True
+
     def process(self, instance):
 
         # Define extract output file path
@@ -25,7 +30,6 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
         # Node should be a node that contains 'tracker' children
         node = instance.data["transientData"]["instance_node"]
 
-
         # Use selection, if any specified, otherwise use all children shapes
         tracker_ids = instance.data.get(
             "creator_attributes", {}).get("trackers")
@@ -35,14 +39,18 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
             ]
         else:
             trackers = [
-                tracker for tracker in node.children
+                tracker for tracker, _label in lib.iter_children(node)
                 if isinstance(tracker, fx.Tracker)
             ]
 
         with lib.maintained_selection():
             fx.select(trackers)
-            self.log.debug(f"Exporting '{self.io_module}' to: {path}")
-            fx.io_modules[self.io_module].export(path)
+            with contextlib.ExitStack() as stack:
+                self.log.debug(f"Exporting '{self.io_module}' to: {path}")
+                if self.capture_messageboxes:
+                    stack.enter_context(
+                        lib.capture_messageboxes(self.on_captured_messagebox))
+                fx.io_modules[self.io_module].export(path)
 
         representation = {
             "name": self.extension,
@@ -54,6 +62,25 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
 
         self.log.debug(f"Extracted instance '{instance.name}' to: {path}")
 
+    def on_captured_messagebox(self, messagebox: QtWidgets.QMessageBox):
+        self.log.debug(f"Detected messagebox: {messagebox.text()}")
+        button_texts = [button.text() for button in messagebox.buttons()]
+        self.log.debug(f"Buttons: {button_texts}")
+        # Continue if messagebox is just confirmation dialog about After
+        # Effects being unable to keyframe Match Size, Search Offset and Search
+        # Size.
+        if "After Effects cannot keyframe" in messagebox.text():
+            self.click(messagebox, "&Yes")
+
+    def click(self, messagebox: QtWidgets.QMessageBox, text: str):
+        """Click QMessageBox button with matching text."""
+        self.log.debug(f"Accepting messagebox with '{text}'")
+        button = next(
+            button for button in messagebox.buttons()
+            if button.text() == text
+        )
+        button.click()
+
 
 class SilhouetteExtractNuke5Track(SilhouetteExtractAfterEffectsTrack):
     """Extract Nuke 5 .nk trackers from Silhouette."""
@@ -63,3 +90,16 @@ class SilhouetteExtractNuke5Track(SilhouetteExtractAfterEffectsTrack):
 
     extension = "nk"
     io_module = "Nuke 5"
+
+    # Whether or not to merge up to four trackers in a single Nuke Tracker node
+    # or otherwise export as multiple single point tracker nodes
+    merge_up_to_four = True
+
+    def on_captured_messagebox(self, messagebox: QtWidgets.QMessageBox):
+        self.log.debug(f"Detected messagebox: {messagebox.text()}")
+        button_texts = [button.text() for button in messagebox.buttons()]
+        self.log.debug(f"Buttons: {button_texts}")
+        # Merge up to four tracker
+        if "Select Yes to merge." in messagebox.text():
+            button = "&Yes" if self.merge_up_to_four else "&No"
+            self.click(messagebox, button)
