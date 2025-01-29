@@ -1,7 +1,7 @@
 import fx
 
 from ayon_core.lib import EnumDef
-from ayon_silhouette.api import plugin
+from ayon_silhouette.api import plugin, lib
 
 
 class CreateTrackPoints(plugin.SilhouetteCreator):
@@ -28,20 +28,11 @@ class CreateTrackPoints(plugin.SilhouetteCreator):
         if not node:
             return []
 
-        trackers = [
-            tracker for tracker in node.children
+        items = [
+            {"label": label, "value": tracker}
+            for tracker, label in lib.iter_children(node)
             if isinstance(tracker, fx.Tracker)
         ]
-        # Iterate reversed so they appear as same order in the object list
-        # in Silhouette user interface
-        items = []
-        for tracker in reversed(trackers):
-            items.append({
-                "label": tracker.label,
-                "value": tracker.id
-            })
-
-
         if not items:
             items.append({
                 "label": "<No trackers found>",

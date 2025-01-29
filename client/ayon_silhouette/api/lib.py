@@ -2,7 +2,7 @@
 import contextlib
 import json
 import logging
-from typing import Optional
+from typing import Optional, Iterator, Tuple
 
 from qtpy import QtCore, QtWidgets
 import fx
@@ -295,3 +295,24 @@ def capture_messageboxes(callback):
         yield
     finally:
         timer.stop()
+
+
+def iter_children(
+        node: fx.Node,
+        prefix: Optional[str] = None
+) -> Iterator[Tuple[fx.Node, str]]:
+    """Iterate over all children of a node recursively.
+
+    This yields the node together with a label that indicates the full path
+    from the root node passed to the function.
+    """
+    children = node.children
+    if not children:
+        return
+    for child in reversed(children):
+        # Yield with a nested label so we can easily display it nicely
+        label = child.label
+        if prefix:
+            label = f"{prefix} > {label}"
+        yield child, label
+        yield from iter_children(child, prefix=label)
