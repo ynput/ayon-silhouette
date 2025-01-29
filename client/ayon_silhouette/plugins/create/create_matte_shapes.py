@@ -1,7 +1,7 @@
 import fx
 
 from ayon_core.lib import EnumDef
-from ayon_silhouette.api import plugin
+from ayon_silhouette.api import plugin, lib
 
 
 class CreateMatteShapes(plugin.SilhouetteCreator):
@@ -27,19 +27,11 @@ class CreateMatteShapes(plugin.SilhouetteCreator):
         if not node:
             return []
 
-        shapes = [
-            shape for shape in node.children if isinstance(shape, fx.Shape)
+        items = [
+            {"label": label, "value": shape}
+            for shape, label in lib.iter_children(node)
+            if isinstance(shape, fx.Shape)
         ]
-        # Iterate reversed so they appear as same order in the object list
-        # in Silhouette user interface
-        items = []
-        for shape in reversed(shapes):
-            items.append({
-                "label": shape.label,
-                "value": shape.id
-            })
-
-
         if not items:
             items.append({
                 "label": "<No shapes found>",
