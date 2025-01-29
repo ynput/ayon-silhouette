@@ -32,14 +32,13 @@ def cache_instance_data(shared_data):
         if not session:
             return
 
-        instance_ids = {AYON_INSTANCE_ID}
         for node in session.nodes:
             instances_data_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY)
             if not instances_data_by_uuid:
                 continue
 
             for instance_uuid, data in instances_data_by_uuid.items():
-                if data.get("id") not in instance_ids:
+                if data.get("id") != AYON_INSTANCE_ID:
                     continue
 
                 creator_id = data.get("creator_identifier")
