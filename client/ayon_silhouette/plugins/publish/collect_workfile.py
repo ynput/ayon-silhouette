@@ -17,6 +17,12 @@ class CollectWorkfileData(pyblish.api.InstancePlugin):
 
         context = instance.context
         current_file = context.data["currentFile"]
+        if not current_file:
+            self.log.warning(
+                "No current saved workfile file found."
+                " Please save your workfile")
+            return
+
         folder, file = os.path.split(current_file)
         filename, ext = os.path.splitext(file)
 
