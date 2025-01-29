@@ -38,7 +38,7 @@ def cache_instance_data(shared_data):
             if not instances_data_by_uuid:
                 continue
 
-            for uuid, data in instances_data_by_uuid.items():
+            for instance_uuid, data in instances_data_by_uuid.items():
                 if data.get("id") not in instance_ids:
                     continue
 
@@ -46,7 +46,8 @@ def cache_instance_data(shared_data):
                 if not creator_id:
                     continue
 
-                cache.setdefault(creator_id, []).append((node, uuid, data))
+                cache.setdefault(creator_id, []).append(
+                    (node, instance_uuid, data))
 
     return shared_data
 
@@ -145,9 +146,10 @@ class SilhouetteCreator(Creator):
 
     def collect_instances(self):
         shared_data = cache_instance_data(self.collection_shared_data)
-        for obj, uuid, data in shared_data["silhouette_cached_instances"].get(
+        cached_instances = shared_data["silhouette_cached_instances"]
+        for obj, instance_uuid, data in cached_instances.get(
                 self.identifier, []):
-            data["instance_id"] = f"{obj.id}|{uuid}"
+            data["instance_id"] = f"{obj.id}|{instance_uuid}"
 
             # Add instance
             created_instance = CreatedInstance.from_existing(
@@ -180,9 +182,9 @@ class SilhouetteCreator(Creator):
     def _imprint(self, node, data):
         # Do not store instance id since it's the Silhouette node id
         instance_id = data.pop("instance_id")
-        uuid = instance_id.rsplit("|", 1)[-1]
+        instance_uuid = instance_id.rsplit("|", 1)[-1]
         instances_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY) or {}
-        instances_by_uuid[uuid] = data
+        instances_by_uuid[instance_uuid] = data
         lib.imprint(node, instances_by_uuid, key=INSTANCES_DATA_KEY)
 
     def get_pre_create_attr_defs(self):
