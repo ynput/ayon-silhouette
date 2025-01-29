@@ -126,6 +126,9 @@ class SilhouetteCreator(Creator):
             product_name=product_name,
             data=instance_data,
             creator=self,
+            transient_data={
+                "instance_node": instance_node
+            }
         )
         # Prepend the node id to the instance id
         instance_data["instance_id"] = (
@@ -134,9 +137,6 @@ class SilhouetteCreator(Creator):
         # Store the instance data
         data = instance.data_to_store()
         self._imprint(instance_node, data)
-
-        # Insert the transient data
-        instance.transient_data["instance_node"] = instance_node
 
         self._add_instance_to_context(instance)
 
@@ -151,11 +151,11 @@ class SilhouetteCreator(Creator):
             data["node_id"] = node_id
 
             # Add instance
-            created_instance = CreatedInstance.from_existing(data, self)
-
-            # Collect transient data
-            created_instance.transient_data["instance_node"] = obj
-
+            created_instance = CreatedInstance.from_existing(
+                data,
+                self,
+                transient_data={"instance_node": obj}
+            )
             self._add_instance_to_context(created_instance)
 
     @lib.undo_chunk("Update instances")
