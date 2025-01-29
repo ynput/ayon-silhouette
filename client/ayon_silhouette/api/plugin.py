@@ -1,3 +1,4 @@
+import uuid
 import fx
 
 from ayon_core.pipeline import (
@@ -118,9 +119,12 @@ class SilhouetteCreator(Creator):
             instance_node.label = session.uniqueLabel(product_name)
         fx.activate(instance_node)
 
-        # Use the uniqueness of the node in Silhouette as the instance id
-        node_id = str(instance_node.id)
-        instance_data["node_id"] = node_id
+        # Use the uniqueness of the node in Silhouette as part of the instance
+        # id, but because we support multiple instances per node, we also add
+        # a uuid within the node to make duplicates of nodes still unique in
+        # the full create context.
+        instance_id = f"{instance_node.id}|{uuid.uuid4()}"
+        instance_data["instance_id"] = instance_id
         instance = CreatedInstance(
             product_type=self.product_type,
             product_name=product_name,
@@ -130,9 +134,6 @@ class SilhouetteCreator(Creator):
                 "instance_node": instance_node
             }
         )
-        # Prepend the node id to the instance id
-        instance_data["instance_id"] = (
-            f"{node_id}|{instance.data['instance_id']}")
 
         # Store the instance data
         data = instance.data_to_store()
@@ -146,9 +147,7 @@ class SilhouetteCreator(Creator):
         shared_data = cache_instance_data(self.collection_shared_data)
         for obj, uuid, data in shared_data["silhouette_cached_instances"].get(
                 self.identifier, []):
-            node_id = str(obj.id)
-            data["instance_id"] = f"{node_id}|{uuid}"
-            data["node_id"] = node_id
+            data["instance_id"] = f"{obj.id}|{uuid}"
 
             # Add instance
             created_instance = CreatedInstance.from_existing(
@@ -180,9 +179,7 @@ class SilhouetteCreator(Creator):
 
     def _imprint(self, node, data):
         # Do not store instance id since it's the Silhouette node id
-        data.pop("node_id", None)  # transient-like data
         instance_id = data.pop("instance_id")
-
         uuid = instance_id.rsplit("|", 1)[-1]
         instances_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY) or {}
         instances_by_uuid[uuid] = data
