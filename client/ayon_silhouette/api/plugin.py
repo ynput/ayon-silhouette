@@ -126,7 +126,7 @@ class SilhouetteCreator(Creator):
         instance_id = f"{instance_node.id}|{uuid.uuid4()}"
         instance_data["instance_id"] = instance_id
         instance_data["label"] = self._define_label(
-            instance_node, instance_data)
+            instance_node, product_name)
         instance = CreatedInstance(
             product_type=self.product_type,
             product_name=product_name,
@@ -151,7 +151,7 @@ class SilhouetteCreator(Creator):
         for obj, instance_uuid, data in cached_instances.get(
                 self.identifier, []):
             data["instance_id"] = f"{obj.id}|{instance_uuid}"
-            data["label"] = self._define_label(obj, data)
+            data["label"] = self._define_label(obj, data["productName"])
 
             # Add instance
             created_instance = CreatedInstance.from_existing(
@@ -207,10 +207,8 @@ class SilhouetteCreator(Creator):
         """Return uuid for instance's key on the node data from instance id."""
         return instance_id.rsplit("|", 1)[-1]
 
-    def _define_label(self, obj: fx.Node, data: dict) -> str:
-        product_name = data["productName"]
-        node_name = obj.label
-        return f"{product_name} ({node_name})"
+    def _define_label(self, obj: fx.Node, product_name: str) -> str:
+        return f"{product_name} ({obj.label})"
 
     def get_pre_create_attr_defs(self):
         return [
