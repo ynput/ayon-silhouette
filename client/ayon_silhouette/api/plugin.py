@@ -172,8 +172,20 @@ class SilhouetteCreator(Creator):
             # Remove node from the scene
             node = instance.transient_data["instance_node"]
             if node:
-                session = node.session
-                session.removeNode(node)
+                instance_uuid = self._get_uuid_from_instance_id(instance.id)
+                instances_by_uuid = lib.read(node,
+                                             key=INSTANCES_DATA_KEY) or {}
+                instances_by_uuid.pop(instance_uuid, None)
+                if not instances_by_uuid:
+                    # Remove the node, because it was the last imprinted value
+                    session = node.session
+                    session.removeNode(node)
+                else:
+                    # Update the node's imprinted value by removing the entry
+                    lib.imprint(
+                        node,
+                        instances_by_uuid,
+                        key=INSTANCES_DATA_KEY)
 
             # Remove the collected CreatedInstance to remove from UI directly
             self._remove_instance_from_context(instance)
@@ -181,10 +193,15 @@ class SilhouetteCreator(Creator):
     def _imprint(self, node, data):
         # Do not store instance id since it's the Silhouette node id
         instance_id = data.pop("instance_id")
-        instance_uuid = instance_id.rsplit("|", 1)[-1]
+
+        instance_uuid = self._get_uuid_from_instance_id(instance_id)
         instances_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY) or {}
         instances_by_uuid[instance_uuid] = data
         lib.imprint(node, instances_by_uuid, key=INSTANCES_DATA_KEY)
+
+    def _get_uuid_from_instance_id(self, instance_id: str) -> str:
+        """Return uuid for instance's key on the node data from instance id."""
+        return instance_id.rsplit("|", 1)[-1]
 
     def get_pre_create_attr_defs(self):
         return [
