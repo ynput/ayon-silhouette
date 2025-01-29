@@ -1,6 +1,6 @@
 import fx
 
-from ayon_core.lib import EnumDef, UILabelDef
+from ayon_core.lib import EnumDef
 from ayon_silhouette.api import plugin, lib
 
 
@@ -29,7 +29,6 @@ class CreateMatteShapes(plugin.SilhouetteCreator):
             })
 
         attr_defs = [
-            UILabelDef(f"Node: {node.label}", key="node_label"),
             EnumDef(
                 "shapes",
                 label="Export shapes",

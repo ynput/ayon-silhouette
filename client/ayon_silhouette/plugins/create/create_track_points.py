@@ -1,6 +1,6 @@
 import fx
 
-from ayon_core.lib import EnumDef, UILabelDef
+from ayon_core.lib import EnumDef
 from ayon_silhouette.api import plugin, lib
 
 
@@ -30,7 +30,6 @@ class CreateTrackPoints(plugin.SilhouetteCreator):
             })
 
         attr_defs = [
-            UILabelDef(f"<b>Node</b>: {node.label}", key="node_label"),
             EnumDef(
                 "trackers",
                 label="Export trackers",
