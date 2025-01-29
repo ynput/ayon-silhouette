@@ -122,7 +122,7 @@ class SilhouetteCreator(Creator):
 
         # Use the uniqueness of the node in Silhouette as part of the instance
         # id, but because we support multiple instances per node, we also add
-        # a uuid within the node to make duplicates of nodes still unique in
+        # an uuid within the node to make duplicates of nodes still unique in
         # the full create context.
         instance_id = f"{instance_node.id}|{uuid.uuid4()}"
         instance_data["instance_id"] = instance_id
