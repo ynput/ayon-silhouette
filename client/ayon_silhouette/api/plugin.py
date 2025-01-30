@@ -30,7 +30,7 @@ def cache_instance_data(shared_data):
 
         session = fx.activeSession()
         if not session:
-            return
+            return cache
 
         for node in session.nodes:
             instances_data_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY)
