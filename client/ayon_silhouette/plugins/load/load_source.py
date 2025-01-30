@@ -1,6 +1,9 @@
 import fx
+import clique
 
 from ayon_silhouette.api import plugin, lib
+
+from ayon_core.pipeline import Anatomy
 from ayon_core.lib.transcoding import (
     VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
 )
@@ -51,6 +54,29 @@ class SourceLoader(plugin.SilhouetteLoader):
         #     context=context,
         #     loader=str(self.__class__.__name__),
         # )
+
+    def filepath_from_context(self, context):
+        # If the media is a sequence of files we need to load it with the
+        # frames in the path as in file.[start-end].ext
+        if context["representation"]["context"].get("frame"):
+            anatomy = Anatomy(
+                project_name=context["project"]["name"],
+                project_entity=context["project"]
+            )
+            representation = context["representation"]
+            files = [data["path"] for data in representation["files"]]
+            files = [anatomy.fill_root(file) for file in files]
+
+            collections, _remainder = clique.assemble(
+                files, patterns=[clique.PATTERNS["frames"]]
+            )
+            collection = collections[0]
+            frames = list(collection.indexes)
+            start = str(frames[0]).zfill(collection.padding)
+            end = str(frames[-1]).zfill(collection.padding)
+            return collection.format(f"{{head}}[{start}-{end}]{{tail}}")
+
+        return super().filepath_from_context(context)
 
     def _get_label(self, context):
         return context["product"]["name"]
