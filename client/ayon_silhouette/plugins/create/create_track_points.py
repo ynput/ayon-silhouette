@@ -19,7 +19,7 @@ class CreateTrackPoints(plugin.SilhouetteCreator):
     def get_attr_defs_for_instance(self, instance):
         node = instance.transient_data["instance_node"]
         items = [
-            {"label": label, "value": tracker}
+            {"label": label, "value": tracker.id}
             for tracker, label in lib.iter_children(node)
             if isinstance(tracker, fx.Tracker)
         ]
