@@ -297,8 +297,7 @@ class SilhouetteImportLoader(SilhouetteLoader):
                 raise LoadError(
                     f"Failed to import as '{self.io_module}':\n{filepath}"
                     f"\n\n"
-                    f"Silhouette is unable to import the file. Most likely "
-                    f"due to incompatibilities or mismatching filetype."
+                    f"Most likely the Tracker format is unsupported."
                 ) from exc
             raise
         self._process_loaded(context, node)
