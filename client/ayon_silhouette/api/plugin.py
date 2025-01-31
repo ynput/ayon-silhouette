@@ -9,6 +9,7 @@ from ayon_core.pipeline import (
     AYON_INSTANCE_ID,
     CreatorError,
 )
+from ayon_core.pipeline.load import LoadError
 from ayon_core.lib import BoolDef
 from . import lib
 
@@ -278,8 +279,20 @@ class SilhouetteImportLoader(SilhouetteLoader):
         # Import the file
         fx.activate(node)
         filepath = self.filepath_from_context(context)
-        fx.io_modules[self.io_module].importFile(filepath)
 
+        try:
+            fx.io_modules[self.io_module].importFile(filepath)
+        except AssertionError as exc:
+            # Provide better message than "importer not ready" when it fails
+            # to import
+            if str(exc) == "importer not ready":
+                raise LoadError(
+                    f"Failed to import as '{self.io_module}':\n{filepath}"
+                    f"\n\n"
+                    f"Silhouette is unable to import the file. Most likely "
+                    f"due to incompatibilities or mismatching filetype."
+                ) from exc
+            raise
         self._process_loaded(context, node)
 
         # property.hidden = True  # hide the attribute
