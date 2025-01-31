@@ -249,7 +249,15 @@ class SilhouetteImportLoader(SilhouetteLoader):
     node_type = "RotoNode"
 
     options = [
-        BoolDef("use_selection", label="Use selection", default=True)
+        BoolDef(
+            "use_selection",
+            label="Use selection",
+            default=True,
+            tooltip=(
+                "Use the selected node if it supports the import type. "
+                "Otherwise create a new node."
+            )
+        )
     ]
 
     @lib.undo_chunk("Load Source")
