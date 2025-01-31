@@ -1,6 +1,7 @@
 import uuid
 import fx
 
+from ayon_silhouette.api.pipeline import parse_container
 from ayon_core.pipeline import (
     Creator,
     LoaderPlugin,
@@ -235,3 +236,101 @@ class SilhouetteCreator(Creator):
 class SilhouetteLoader(LoaderPlugin):
     settings_category = "silhouette"
     hosts = ["silhouette"]
+
+
+class SilhouetteImportLoader(SilhouetteLoader):
+    """Import using the chosen Silhouette IO module."""
+    # TODO: Should we allow importing multiple containers to one node?
+    #  It may be needed for importing both track points and matte shapes to
+    #  a single RotoNode
+
+    io_module: str
+    node_type = "RotoNode"
+
+    options = [
+        BoolDef("use_selection", label="Use selection", default=True)
+    ]
+
+    @lib.undo_chunk("Load Source")
+    @lib.maintained_selection()
+    def load(self, context, name=None, namespace=None, options=None):
+        """Merge the Alembic into the scene."""
+        if not fx.activeProject():
+            raise RuntimeError("No active project found.")
+        if not fx.activeSession():
+            raise RuntimeError("No active session found.")
+        if options is None:
+            options = {}
+
+        # Use selected node or create a new one to import to
+        selection = [
+            _node for _node in fx.selection() if self.can_import_to_node(_node)
+        ]
+        if options.get("use_selection", True) and selection:
+            node = selection[0]
+        else:
+            # Create a new node
+            node = fx.Node(self.node_type)
+            fx.activeSession().addNode(node)
+            lib.set_new_node_position(node)
+
+
+        # Import the file
+        fx.activate(node)
+        filepath = self.filepath_from_context(context)
+        fx.io_modules[self.io_module].importFile(filepath)
+
+        self._process_loaded(context, node)
+
+        # property.hidden = True  # hide the attribute
+        lib.imprint(node, data={
+            "name": str(name),
+            "namespace": str(namespace),
+            "loader": str(self.__class__.__name__),
+            "representation": context["representation"]["id"],
+        })
+
+    def _process_loaded(self, context, node):
+        # For overrides on inherited classes
+        pass
+
+    @lib.undo_chunk("Update Source")
+    @lib.maintained_selection()
+    def update(self, container, context):
+        item: fx.Node = container["_item"]
+
+        # Remove existing children
+        item.objects.removeObjects(item.children)
+
+        # Import the file
+        fx.activate(item)
+        filepath = self.filepath_from_context(context)
+        fx.io_modules[self.io_module].importFile(filepath)
+
+        # Update representation id
+        data = lib.read(item)
+        data["representation"] = context["representation"]["id"]
+        lib.imprint(item, data)
+
+    @lib.undo_chunk("Remove container")
+    def remove(self, container):
+        """Remove node from session"""
+        node: fx.Node = container["_item"]
+        session = container["_session"]
+        session.removeNode(node)
+
+    def switch(self, container, context):
+        """Support switch to another representation."""
+        self.update(container, context)
+
+    def can_import_to_node(self, node) -> bool:
+
+        if isinstance(node, fx.Node):
+            return True
+
+        # Do not allow load to node that already has import
+        # TODO: Support multiple containers per node
+        if parse_container(node):
+            return False
+
+        return False
