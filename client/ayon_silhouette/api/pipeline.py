@@ -1,6 +1,7 @@
 import os
 import logging
 import contextlib
+from pathlib import Path
 from functools import partial
 
 import pyblish.api
@@ -205,16 +206,55 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         # TODO: Detect a "save into another context" similar to Maya
 
     def open_workfile(self, filepath):
-        return fx.loadProject(filepath)
+        # Support .zip (zipped project workfiles)
+        zipped_filepath = None
+        if filepath.endswith(".zip"):
+            # Unzip the file
+            zipped_filepath = filepath
+            unzipped_filepath = filepath[:-4] + ".sfx"
+            lib.unzip(filepath, unzipped_filepath)
+            filepath = unzipped_filepath
+
+        fx.loadProject(filepath)
+
+        # Check for successful project open.
+        # Note: `fx.loadProject` does return the loaded project - however it
+        # also returns one if the file actually failed to load
+        project = fx.activeProject()
+        if not project or not project.path:
+            self.log.error("Failed to open project at: %s", filepath)
+            return
+
+        # If we opened a .zip and the project loaded succesfully, then remove
+        # the file if it is in AYON_WORKDIR (because those .zip should only
+        # live there temporarily on "Copy & Open" from published workfiles
+        # in the workfiles tool)
+        def is_in_workdir():
+            return (
+                Path(os.environ["AYON_WORKDIR"]) ==
+                Path(zipped_filepath).parent
+            )
+        if zipped_filepath and is_in_workdir():
+            os.remove(zipped_filepath)
 
     def save_workfile(self, filepath=None):
         project = _get_project()
         if not project:
             return
 
+        # Silhouette host integration has `.zip` as supported extension
+        # solely so that it can open the published zipped project workfiles.
+        if filepath and filepath.endswith(".zip"):
+            self.log.warning(
+                "Silhouette does not support saving as .zip. "
+                "Only opening the published .zip project workfiles. "
+                "Saving as .sfx instead.")
+            filepath = filepath[:-4]  # Remove .zip extension
+            filepath += ".sfx"        # Add .sfx extension
+
         # Consider `None` value to be saving into current project path
         args = (filepath,) if filepath else ()
-        return project.save(*args)
+        project.save(*args)
 
     def get_current_workfile(self):
         project = _get_project()
@@ -236,7 +276,12 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         return project.is_modified
 
     def get_workfile_extensions(self):
-        return [".sfx"]
+        return [
+            ".sfx",
+            # Silhouette doesn't natively support .zip but since the .sfx
+            # projects are folders, we use zipped
+            ".zip"
+        ]
 
     def get_containers(self):
         return iter_containers()

@@ -2,6 +2,9 @@
 import contextlib
 import json
 import logging
+import os
+import shutil
+import zipfile
 from typing import Optional, Iterator, Tuple
 
 from qtpy import QtCore, QtWidgets
@@ -316,3 +319,45 @@ def iter_children(
             label = f"{prefix} > {label}"
         yield child, label
         yield from iter_children(child, prefix=label)
+
+
+class _ZipFile(zipfile.ZipFile):
+    """Extended check for windows invalid characters."""
+
+    # this is extending default zipfile table for few invalid characters
+    # that can come from Mac
+    _windows_illegal_characters = ":<>|\"?*\r\n\x00"
+    _windows_illegal_name_trans_table = str.maketrans(
+        _windows_illegal_characters,
+        "_" * len(_windows_illegal_characters)
+    )
+
+
+def zip_and_move(source, destination):
+    """Zip a directory and move to `destination`.
+
+    Args:
+        source (str): Directory to zip and move to destination.
+        destination (str): Destination file path to zip file.
+
+    """
+    os.chdir(os.path.dirname(source))
+    shutil.make_archive(os.path.basename(source), "zip", source)
+    with _ZipFile(os.path.basename(source) + ".zip") as zr:
+        if zr.testzip() is not None:
+            raise Exception("File archive is corrupted.")
+    shutil.move(os.path.basename(source) + ".zip", destination)
+    log.debug(f"Saved '{source}' to '{destination}'")
+
+
+def unzip(source, destination):
+    """Unzip a zip file to destination.
+
+    Args:
+        source (str): Zip file to extract.
+        destination (str): Destination directory to extract to.
+
+    """
+    with _ZipFile(source) as zr:
+        zr.extractall(destination)
+    log.debug(f"Extracted '{source}' to '{destination}'")
