@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import platform
-import shutil
 import zipfile
 from typing import Optional, Iterator, Tuple
 
