@@ -2,6 +2,9 @@
 import contextlib
 import json
 import logging
+import os
+import platform
+import zipfile
 from typing import Optional, Iterator, Tuple
 
 from qtpy import QtCore, QtWidgets
@@ -316,3 +319,79 @@ def iter_children(
             label = f"{prefix} > {label}"
         yield child, label
         yield from iter_children(child, prefix=label)
+
+
+class _ZipFile(zipfile.ZipFile):
+    """Extended check for windows invalid characters."""
+
+    # this is extending default zipfile table for few invalid characters
+    # that can come from Mac
+    _windows_illegal_characters = ":<>|\"?*\r\n\x00"
+    _windows_illegal_name_trans_table = str.maketrans(
+        _windows_illegal_characters,
+        "_" * len(_windows_illegal_characters)
+    )
+    _is_windows = platform.system().lower() == "windows"
+
+    def _extract_member(self, member, tpath, pwd):
+        """Allows longer paths in zip files.
+
+        Regular DOS paths are limited to MAX_PATH (260) characters, including
+        the string's terminating NUL character.
+        That limit can be exceeded by using an extended-length path that
+        starts with the '\\?\' prefix.
+        """
+        if self._is_windows:
+            tpath = os.path.abspath(tpath)
+            if tpath.startswith("\\\\"):
+                tpath = "\\\\?\\UNC\\" + tpath[2:]
+            else:
+                tpath = "\\\\?\\" + tpath
+
+        return super()._extract_member(member, tpath, pwd)
+
+
+def zip_folder(source, destination):
+    """Zip a directory and move to `destination`.
+
+    This zips the contents of the source directory into the zip file. The
+    source directory itself is not included in the zip file.
+
+    Args:
+        source (str): Directory to zip and move to destination.
+        destination (str): Destination file path to zip file.
+
+    """
+    def _iter_zip_files_mapping(start):
+        for root, dirs, files in os.walk(start):
+            for folder in dirs:
+                path = os.path.join(root, folder)
+                yield path, os.path.relpath(path, start)
+            for file in files:
+                path = os.path.join(root, file)
+                yield path, os.path.relpath(path, start)
+
+    if not os.path.isdir(source):
+        raise ValueError(f"Source is not a directory: {source}")
+
+    if os.path.exists(destination):
+        os.remove(destination)
+
+    with _ZipFile(
+        destination, "w", zipfile.ZIP_DEFLATED
+    ) as zr:
+        for path, relpath in _iter_zip_files_mapping(source):
+            zr.write(path, relpath)
+
+
+def unzip(source, destination):
+    """Unzip a zip file to destination.
+
+    Args:
+        source (str): Zip file to extract.
+        destination (str): Destination directory to extract to.
+
+    """
+    with _ZipFile(source) as zr:
+        zr.extractall(destination)
+    log.debug(f"Extracted '{source}' to '{destination}'")
