@@ -352,21 +352,37 @@ class _ZipFile(zipfile.ZipFile):
         return super()._extract_member(member, tpath, pwd)
 
 
-def zip_and_move(source, destination):
+def zip_folder(source, destination):
     """Zip a directory and move to `destination`.
+
+    This zips the contents of the source directory into the zip file. The
+    source directory itself is not included in the zip file.
 
     Args:
         source (str): Directory to zip and move to destination.
         destination (str): Destination file path to zip file.
 
     """
-    os.chdir(os.path.dirname(source))
-    shutil.make_archive(os.path.basename(source), "zip", source)
-    with _ZipFile(os.path.basename(source) + ".zip") as zr:
-        if zr.testzip() is not None:
-            raise Exception("File archive is corrupted.")
-    shutil.move(os.path.basename(source) + ".zip", destination)
-    log.debug(f"Saved '{source}' to '{destination}'")
+    def _iter_zip_files_mapping(start):
+        for root, dirs, files in os.walk(start):
+            for folder in dirs:
+                path = os.path.join(root, folder)
+                yield path, os.path.relpath(path, start)
+            for file in files:
+                path = os.path.join(root, file)
+                yield path, os.path.relpath(path, start)
+
+    if not os.path.isdir(source):
+        raise ValueError(f"Source is not a directory: {source}")
+
+    if os.path.exists(destination):
+        os.remove(destination)
+
+    with _ZipFile(
+        destination, "w", zipfile.ZIP_DEFLATED
+    ) as zr:
+        for path, relpath in _iter_zip_files_mapping(source):
+            zr.write(path, relpath)
 
 
 def unzip(source, destination):

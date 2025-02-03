@@ -28,7 +28,7 @@ class SilhouetteExtractWorkfile(publish.Extractor):
         # Zip current workfile (Silhouette workfiles are folders)
         staging_dir = self.staging_dir(instance)
         filename = f"{instance.name}.zip"
-        lib.zip_and_move(current_file, os.path.join(staging_dir, filename))
+        lib.zip_folder(current_file, os.path.join(staging_dir, filename))
 
         # Add representation
         instance.data.setdefault("representations", []).append({
