@@ -311,13 +311,15 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         return lib.read(project, key=self.context_data_key) or {}
 
 
-def parse_container(source, project=None):
+def parse_container(source, project=None, session=None):
     """Return the container node's full container data.
 
     Args:
-        source (fx.Source): A Silhouette source.
+        source (fx.Source | fx.Node): A Silhouette source or node.
         project (Optional[fx.Project]): Project related to the source
             item or node so that we can track it back to the project.
+        session (Optional[fx.Session]): Session related to the source
+            item or node so that we can track it back to the session.
 
     Returns:
         dict[str, Any]: The container schema data for this container node.
@@ -337,11 +339,13 @@ def parse_container(source, project=None):
     data["_item"] = source
     if project is not None:
         data["_project"] = project
+    if session is not None:
+        data["_session"] = session
 
     return data
 
 
-def iter_containers(project=None):
+def iter_containers(project=None, session=None):
     """Yield all source objects in the active project with AYON property
      AYON container ID"""
 
@@ -351,9 +355,21 @@ def iter_containers(project=None):
     if not project:
         return
 
-    # List all sources with `AYON` property
+    # List all sources in project with `AYON` property
     for source in project.sources:
         data = parse_container(source, project=project)
+        if data:
+            yield data
+
+    if session is None:
+        session = fx.activeSession()
+
+    if not session:
+        return
+
+    # List all nodes in session with `AYON` property
+    for node in session.nodes:
+        data = parse_container(node, project=project, session=session)
         if data:
             yield data
 
