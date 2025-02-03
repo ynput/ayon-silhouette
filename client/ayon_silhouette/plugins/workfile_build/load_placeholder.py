@@ -3,10 +3,6 @@ from ayon_core.pipeline.workfile.workfile_template_builder import (
     PlaceholderLoadMixin,
 )
 
-import ayon_silhouette.api.workfile_template_builder
-import importlib
-importlib.reload(ayon_silhouette.api.workfile_template_builder)
-
 import fx
 
 from ayon_silhouette.api.workfile_template_builder import (
