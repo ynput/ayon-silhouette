@@ -34,4 +34,5 @@ class SilhouettePlaceholderLoadPlugin(SilhouettePlaceholderPlugin,
                 representation.
             failed (bool): Loading of representation failed.
         """
-        pass
+        if not placeholder.data.get("keep_placeholder", True):
+            self.delete_placeholder(placeholder)
