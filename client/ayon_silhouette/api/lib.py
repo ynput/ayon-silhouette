@@ -331,7 +331,17 @@ class _ZipFile(zipfile.ZipFile):
         _windows_illegal_characters,
         "_" * len(_windows_illegal_characters)
     )
+    _is_windows = platform.system().lower() == "windows"
 
+    def _extract_member(self, member, tpath, pwd):
+        if self._is_windows:
+            tpath = os.path.abspath(tpath)
+            if tpath.startswith("\\\\"):
+                tpath = "\\\\?\\UNC\\" + tpath[2:]
+            else:
+                tpath = "\\\\?\\" + tpath
+
+        return super()._extract_member(member, tpath, pwd)
 
 def zip_and_move(source, destination):
     """Zip a directory and move to `destination`.
