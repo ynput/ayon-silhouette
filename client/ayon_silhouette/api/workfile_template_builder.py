@@ -1,3 +1,4 @@
+import itertools
 from typing import List, Dict
 
 from ayon_core.pipeline import registered_host
@@ -52,6 +53,14 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
     data_key = "ayon.placeholder"
     item_class = PlaceholderItem
 
+    def _create_placeholder_node(self, placeholder_data, session):
+        # Create node
+        placeholder_node = fx.Node(self.node_type)
+        placeholder_node.label = "PLACEHOLDER"
+        session.addNode(placeholder_node)
+        lib.set_new_node_position(placeholder_node)
+        return placeholder_node
+
     @lib.undo_chunk("Create placeholder")
     def create_placeholder(self, placeholder_data) -> PlaceholderItem:
         session = fx.activeSession()
@@ -60,11 +69,8 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
 
         placeholder_data["plugin_identifier"] = self.identifier
 
-        # Create node
-        placeholder_node = fx.Node(self.node_type)
-        placeholder_node.label = "PLACEHOLDER"
-        session.addNode(placeholder_node)
-        lib.set_new_node_position(placeholder_node)
+        placeholder_node = self._create_placeholder_node(
+            placeholder_data, session)
 
         fx.activate(placeholder_node)
 
@@ -95,8 +101,9 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
         if nodes is None:
             # Populate cache
             session = fx.activeSession()
+            project = fx.activeProject()
             nodes_by_plugin_identifier = {}
-            for node in session.nodes:
+            for node in itertools.chain(session.nodes, project.sources):
                 node_data = read(node, key=self.data_key)
                 if not node_data:
                     continue
