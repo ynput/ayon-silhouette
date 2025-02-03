@@ -3,6 +3,7 @@ import contextlib
 import json
 import logging
 import os
+import platform
 import shutil
 import zipfile
 from typing import Optional, Iterator, Tuple
@@ -334,6 +335,13 @@ class _ZipFile(zipfile.ZipFile):
     _is_windows = platform.system().lower() == "windows"
 
     def _extract_member(self, member, tpath, pwd):
+        """Allows longer paths in zip files.
+
+        Regular DOS paths are limited to MAX_PATH (260) characters, including
+        the string's terminating NUL character.
+        That limit can be exceeded by using an extended-length path that
+        starts with the '\\?\' prefix.
+        """
         if self._is_windows:
             tpath = os.path.abspath(tpath)
             if tpath.startswith("\\\\"):
