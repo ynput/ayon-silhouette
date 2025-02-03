@@ -87,7 +87,8 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
                            placeholder_item: PlaceholderItem,
                            placeholder_data: dict):
         node = placeholder_item.transient_data["node"]  # noqa
-        imprint(node, placeholder_data)
+        placeholder_data["plugin_identifier"] = self.identifier
+        imprint(node, placeholder_data, key=self.data_key)
 
     def _collect_placeholder_nodes(self) -> Dict[str, List[fx.Node]]:
         nodes = self.builder.get_shared_populate_data("placeholder_nodes")
