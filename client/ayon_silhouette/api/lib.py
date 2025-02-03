@@ -351,6 +351,7 @@ class _ZipFile(zipfile.ZipFile):
 
         return super()._extract_member(member, tpath, pwd)
 
+
 def zip_and_move(source, destination):
     """Zip a directory and move to `destination`.
 
