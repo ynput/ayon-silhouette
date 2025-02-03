@@ -32,7 +32,7 @@ class SilhouetteExtractWorkfile(publish.Extractor):
 
         # Add representation
         instance.data.setdefault("representations", []).append({
-            "name": "zip",
+            "name": "sfx_zip",
             "ext": "zip",
             "files": filename,
             "stagingDir": staging_dir,
