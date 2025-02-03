@@ -1,3 +1,4 @@
+import uuid
 import fx
 
 from ayon_core.pipeline import (
@@ -9,6 +10,8 @@ from ayon_core.pipeline import (
 )
 from ayon_core.lib import BoolDef
 from . import lib
+
+INSTANCES_DATA_KEY = "AYON_instances"
 
 
 def cache_instance_data(shared_data):
@@ -27,27 +30,41 @@ def cache_instance_data(shared_data):
 
         session = fx.activeSession()
         if not session:
-            return
+            return cache
 
-        instance_ids = {AYON_INSTANCE_ID}
         for node in session.nodes:
-            data = lib.read(node)
-            if not data:
+            instances_data_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY)
+            if not instances_data_by_uuid:
                 continue
 
-            if data.get("id") not in instance_ids:
-                continue
+            for instance_uuid, data in instances_data_by_uuid.items():
+                if data.get("id") != AYON_INSTANCE_ID:
+                    continue
 
-            creator_id = data.get("creator_identifier")
-            if not creator_id:
-                continue
+                creator_id = data.get("creator_identifier")
+                if not creator_id:
+                    continue
 
-            cache.setdefault(creator_id, []).append(node)
+                cache.setdefault(creator_id, []).append(
+                    (node, instance_uuid, data))
 
     return shared_data
 
 
 class SilhouetteCreator(Creator):
+    """Base class for Silhouette creators.
+
+    This base creator can be applied multiple times to a single node, where
+    each instance is stored as a separate imprint on the node, inside an
+    `AYON_instances` state that is a `dict[str, dict]` of instance data per
+    uuid. The `instance_id` will then be defined by the node's id and this uuid
+    as `{node_id}|{uuid}`.
+
+    This way, a single RotoNode can have multiple instances of different
+    product types (or even the same product type) to allow exporting e.g.
+    track points and matte shapes from the same RotoNode.
+
+    """
     default_variants = ["Main"]
     settings_category = "silhouette"
 
@@ -83,7 +100,7 @@ class SilhouetteCreator(Creator):
                             "Selected node is already imprinted by a Creator."
                         )
                     instance_node = node
-                    self.log.debug(
+                    self.log.info(
                         f"Using selected node as instance node: {node.label}")
                     break
 
@@ -99,24 +116,30 @@ class SilhouetteCreator(Creator):
                 self._connect_input_to_first_matching_candidate(
                     instance_node, selected_nodes)
 
-        instance_node.label = session.uniqueLabel(product_name)
+            instance_node.label = session.uniqueLabel(product_name)
         fx.activate(instance_node)
 
-        # Use the uniqueness of the node in Silhouette as the instance id
-        instance_data["instance_id"] = instance_node.id
+        # Use the uniqueness of the node in Silhouette as part of the instance
+        # id, but because we support multiple instances per node, we also add
+        # an uuid within the node to make duplicates of nodes still unique in
+        # the full create context.
+        instance_id = f"{instance_node.id}|{uuid.uuid4()}"
+        instance_data["instance_id"] = instance_id
+        instance_data["label"] = self._define_label(
+            instance_node, product_name)
         instance = CreatedInstance(
             product_type=self.product_type,
             product_name=product_name,
             data=instance_data,
             creator=self,
+            transient_data={
+                "instance_node": instance_node
+            }
         )
 
         # Store the instance data
         data = instance.data_to_store()
         self._imprint(instance_node, data)
-
-        # Insert the transient data
-        instance.transient_data["instance_node"] = instance_node
 
         self._add_instance_to_context(instance)
 
@@ -124,18 +147,18 @@ class SilhouetteCreator(Creator):
 
     def collect_instances(self):
         shared_data = cache_instance_data(self.collection_shared_data)
-        for obj in shared_data["silhouette_cached_instances"].get(
+        cached_instances = shared_data["silhouette_cached_instances"]
+        for obj, instance_uuid, data in cached_instances.get(
                 self.identifier, []):
-
-            data = lib.read(obj)
-            data["instance_id"] = str(obj.id)
+            data["instance_id"] = f"{obj.id}|{instance_uuid}"
+            data["label"] = self._define_label(obj, data["productName"])
 
             # Add instance
-            created_instance = CreatedInstance.from_existing(data, self)
-
-            # Collect transient data
-            created_instance.transient_data["instance_node"] = obj
-
+            created_instance = CreatedInstance.from_existing(
+                data,
+                self,
+                transient_data={"instance_node": obj}
+            )
             self._add_instance_to_context(created_instance)
 
     @lib.undo_chunk("Update instances")
@@ -152,16 +175,40 @@ class SilhouetteCreator(Creator):
             # Remove node from the scene
             node = instance.transient_data["instance_node"]
             if node:
-                session = node.session
-                session.removeNode(node)
+                instance_uuid = self._get_uuid_from_instance_id(instance.id)
+                instances_by_uuid = lib.read(node,
+                                             key=INSTANCES_DATA_KEY) or {}
+                instances_by_uuid.pop(instance_uuid, None)
+                if not instances_by_uuid:
+                    # Remove the node, because it was the last imprinted value
+                    session = node.session
+                    session.removeNode(node)
+                else:
+                    # Update the node's imprinted value by removing the entry
+                    lib.imprint(
+                        node,
+                        instances_by_uuid,
+                        key=INSTANCES_DATA_KEY)
 
             # Remove the collected CreatedInstance to remove from UI directly
             self._remove_instance_from_context(instance)
 
     def _imprint(self, node, data):
+        data.pop("label", None)  # do not store the label
         # Do not store instance id since it's the Silhouette node id
-        data.pop("instance_id", None)
-        lib.imprint(node, data)
+        instance_id = data.pop("instance_id")
+
+        instance_uuid = self._get_uuid_from_instance_id(instance_id)
+        instances_by_uuid = lib.read(node, key=INSTANCES_DATA_KEY) or {}
+        instances_by_uuid[instance_uuid] = data
+        lib.imprint(node, instances_by_uuid, key=INSTANCES_DATA_KEY)
+
+    def _get_uuid_from_instance_id(self, instance_id: str) -> str:
+        """Return uuid for instance's key on the node data from instance id."""
+        return instance_id.rsplit("|", 1)[-1]
+
+    def _define_label(self, obj: fx.Node, product_name: str) -> str:
+        return f"{product_name} ({obj.label})"
 
     def get_pre_create_attr_defs(self):
         return [

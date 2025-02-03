@@ -16,19 +16,9 @@ class CreateMatteShapes(plugin.SilhouetteCreator):
     create_node_type = "RotoNode"
 
     def get_attr_defs_for_instance(self, instance):
-        # Unfortunately in Creator.get_attr_defs_for_instance we can't access
-        # any transient data because this gets called on `__init__` of the
-        # instance directly, not after transient data was added to the instance
-        # in the `create` or `collect` method. So we must find the node by
-        # node id.
-        node_id = instance.data.get("instance_id")
-        node = fx.findObject(node_id)
-
-        if not node:
-            return []
-
+        node = instance.transient_data["instance_node"]
         items = [
-            {"label": label, "value": shape}
+            {"label": label, "value": shape.id}
             for shape, label in lib.iter_children(node)
             if isinstance(shape, fx.Shape)
         ]
