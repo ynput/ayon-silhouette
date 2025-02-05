@@ -107,7 +107,8 @@ class SilhouettePlaceholderLoadPlugin(
                         stream_property = clone.property(stream)
                         if stream_property is None:
                             self.log.warning(
-                                f"Node {node} has no stream property: {stream}")
+                                f"Node {node} has no stream property: "
+                                f"{stream}")
                             continue
 
                         # If the stream references the placeholder source item
