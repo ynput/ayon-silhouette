@@ -28,4 +28,9 @@ class SilhouetteAddon(AYONAddon, IHostAddon):
         env[script_key] = os.pathsep.join(paths)
 
     def get_workfile_extensions(self):
-        return [".sfx"]
+        return [
+            ".sfx",
+            # Silhouette doesn't natively support .zip but since the .sfx
+            # projects are folders, we use zipped
+            ".zip"
+        ]
