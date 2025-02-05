@@ -147,8 +147,14 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
     def delete_placeholder(self, placeholder: PlaceholderItem):
         """Remove placeholder if building was successful"""
         node = placeholder.transient_data["node"]  # noqa
-        session = node.session
-        session.removeNode(node)
+        if isinstance(node, fx.Node):
+            session = node.session
+            session.removeNode(node)
+        elif isinstance(node, fx.Source):
+            project = node.parent.parent  # Source -> SourceItem -> Project
+            project.removeItem(node)
+        else:
+            raise TypeError(f"Unsupported placeholder node: {node}")
 
 
 @lib.undo_chunk("Build workfile template")
@@ -174,7 +180,6 @@ def create_placeholder(*args):
     window = WorkfileBuildPlaceholderDialog(host, builder,
                                             parent=get_main_window())
     window.show()
-
 
 def update_placeholder(*args):
     host = registered_host()

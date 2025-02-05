@@ -395,3 +395,35 @@ def unzip(source, destination):
     with _ZipFile(source) as zr:
         zr.extractall(destination)
     log.debug(f"Extracted '{source}' to '{destination}'")
+
+
+@undo_chunk("Transfer connections")
+def transfer_connections(
+    source: fx.Node,
+    destination: fx.Node,
+    inputs: bool = True,
+    outputs: bool = True):
+    """Transfer connections from one node to another."""
+    # TODO: Match port by something else than name? (e.g. idx?)
+    # Transfer connections from inputs
+    if inputs:
+        for _input in source.connectedInputs:
+            name = _input.name
+            destination_input = next((
+                port for port in destination.inputs
+                if port.name == name), None)
+            if destination_input:
+                destination_input.disconnect()
+                _input.source.connect(destination_input)
+
+    # Transfer connections from outputs
+    if outputs:
+        for output in source.connectedOutputs:
+            name = output.name
+            destination_output = next((
+                port for port in destination.outputs
+                if port.name == name), None)
+            if destination_output:
+                for target in output.targets:
+                    target.disconnect()
+                    destination_output.connect(target)
