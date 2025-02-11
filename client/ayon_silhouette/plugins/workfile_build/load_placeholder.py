@@ -75,7 +75,7 @@ class SilhouettePlaceholderLoadPlugin(
             #   like Matte Shapes + Track Points both loaded to one roto node.
             position = node.getState("graph.pos")
             for loaded_item in loaded_items:
-                lib.transfer_connections(node, loaded_items)
+                lib.transfer_connections(node, loaded_item)
 
                 # Try to match the node position with the placeholder
                 loaded_item.setState("graph.pos", position)
