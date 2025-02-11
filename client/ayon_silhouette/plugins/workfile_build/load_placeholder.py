@@ -118,12 +118,13 @@ class SilhouettePlaceholderLoadPlugin(
 
                     lib.transfer_connections(dependency, clone)
 
-        if not placeholder.data.get("keep_placeholder", True):
+    def delete_placeholder(self, placeholder):
 
-            if isinstance(node, fx.Source):
-                project = fx.activeProject()
-                # Delete all placeholder dependencies in the graph
-                for dependency in node.dependencies:
-                    project.removeItem(dependency)
+        node = placeholder.transient_data["node"]  # noqa
+        if isinstance(node, fx.Source):
+            project = fx.activeProject()
+            # Delete all placeholder dependencies in the graph
+            for dependency in node.dependencies:
+                project.removeItem(dependency)
 
-            self.delete_placeholder(placeholder)
+        super().delete_placeholder(placeholder)
