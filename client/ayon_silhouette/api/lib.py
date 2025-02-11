@@ -420,6 +420,7 @@ def get_input_port_by_name(node: fx.Node, port_name: str) -> Optional[fx.Port]:
         None
     )
 
+
 def get_output_port_by_name(
         node: fx.Node, port_name: str) -> Optional[fx.Port]:
     """Return the output port with the given name."""
