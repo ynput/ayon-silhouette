@@ -1,6 +1,4 @@
 import itertools
-import os
-import tempfile
 from typing import List, Dict
 
 from ayon_core.pipeline import registered_host
