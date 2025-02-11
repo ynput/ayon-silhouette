@@ -427,3 +427,57 @@ def transfer_connections(
                 for target in output.targets:
                     target.disconnect()
                     destination_output.connect(target)
+
+
+@undo_chunk("Import project")
+def import_project(
+    path,
+    merge_sessions=True):
+    """Import Silhouette project into current project.
+
+    Silhouette can't 'import' projects natively, so instead we will use our
+    own logic to load the content from a project file into the currently
+    active project.
+
+    Arguments:
+        path (str): The project path to import. Since Silhouette projects
+            are folders this should be the path to the project folder.
+        merge_sessions (bool): When enabled, sessions with the same label
+            will be 'merged' by adding all nodes of the imported session to
+            the existing session.
+
+    """
+    original_project = fx.activeProject()
+
+    if not original_project:
+        # Open a project
+        original_project = fx.Project()
+        fx.setActiveProject(original_project)
+
+    merge_project = fx.loadProject(path)
+
+    # Revert to original project
+    fx.setActiveProject(original_project)
+
+    # Add sources from the other project
+    for source in merge_project.sources:
+        original_project.addItem(source)
+
+    # Merge sessions by label if there's a matching one
+    sessions_by_label = {
+        session.label: session for session in original_project.sessions
+    }
+    for merge_session in merge_project.sessions:
+        if merge_sessions and merge_session.label in sessions_by_label:
+            # Merge the session
+            original_session = sessions_by_label[merge_session.label]
+            for node in merge_session.nodes:
+                original_session.addNode(node)
+        else:
+            # Add the session
+            original_project.addItem(merge_session.clone())
+
+            # For niceness - set it as active session if current project has
+            # no active session
+            if not fx.activeSession():
+                fx.setActiveSession(merge_session)

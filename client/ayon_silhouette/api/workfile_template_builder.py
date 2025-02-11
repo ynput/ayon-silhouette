@@ -1,4 +1,6 @@
 import itertools
+import os
+import tempfile
 from typing import List, Dict
 
 from ayon_core.pipeline import registered_host
@@ -37,10 +39,8 @@ class SilhouetteTemplateBuilder(AbstractTemplateBuilder):
         Returns:
             bool: Whether the template was successfully imported or not
         """
-
         # TODO check if the template is already imported
-        _objects = fx.importObjects(path)
-        # TODO: Do we need to do something with the object list
+        lib.import_project(path)
 
         # Clear any selection if it occurred on load or import
         fx.select([])
