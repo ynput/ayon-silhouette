@@ -47,13 +47,13 @@ class SilhouetteTemplateBuilder(AbstractTemplateBuilder):
 
 
 class SilhouettePlaceholderPlugin(PlaceholderPlugin):
-    node_type = "NullNode"
     data_key = "ayon.placeholder"
     item_class = PlaceholderItem
 
-    def _create_placeholder_node(self, placeholder_data, session):
+    def _create_placeholder_node(
+            self, placeholder_data, session, node_type="NullNode"):
         # Create node
-        placeholder_node = fx.Node(self.node_type)
+        placeholder_node = fx.Node(node_type)
         placeholder_node.label = "PLACEHOLDER"
         session.addNode(placeholder_node)
         lib.set_new_node_position(placeholder_node)

@@ -32,7 +32,15 @@ class SilhouettePlaceholderLoadPlugin(
             project.addItem(source)
             return source
 
-        return super()._create_placeholder_node(placeholder_data, session)
+        # Allow the chosen loader to define the placeholder node type via its
+        # `node_type` attribute, so that we get the best matching input/output
+        # ports
+        loaders = self.builder.get_loaders_by_name()
+        loader = loaders.get(placeholder_data["loader"])
+        node_type = getattr(loader, "node_type", "NullNode")
+
+        return super()._create_placeholder_node(placeholder_data, session,
+                                                node_type=node_type)
 
     def populate_placeholder(self, placeholder):
         self.populate_load_placeholder(placeholder)
