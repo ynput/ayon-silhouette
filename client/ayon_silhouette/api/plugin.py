@@ -260,7 +260,7 @@ class SilhouetteImportLoader(SilhouetteLoader):
         )
     ]
 
-    @lib.undo_chunk("Load Source")
+    @lib.undo_chunk("Load")
     @lib.maintained_selection()
     def load(self, context, name=None, namespace=None, options=None):
         """Merge the Alembic into the scene."""

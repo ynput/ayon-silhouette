@@ -24,8 +24,6 @@ class SourceLoader(plugin.SilhouetteLoader):
 
     @lib.undo_chunk("Load Source")
     def load(self, context, name=None, namespace=None, options=None):
-        """Merge the Alembic into the scene."""
-
         project = fx.activeProject()
         if not project:
             raise RuntimeError("No active project found.")
