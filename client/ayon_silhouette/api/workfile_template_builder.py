@@ -1,3 +1,4 @@
+import itertools
 from typing import List, Dict
 
 from ayon_core.pipeline import registered_host
@@ -36,10 +37,8 @@ class SilhouetteTemplateBuilder(AbstractTemplateBuilder):
         Returns:
             bool: Whether the template was successfully imported or not
         """
-
         # TODO check if the template is already imported
-        _objects = fx.importObjects(path)
-        # TODO: Do we need to do something with the object list
+        lib.import_project(path)
 
         # Clear any selection if it occurred on load or import
         fx.select([])
@@ -48,9 +47,17 @@ class SilhouetteTemplateBuilder(AbstractTemplateBuilder):
 
 
 class SilhouettePlaceholderPlugin(PlaceholderPlugin):
-    node_type = "NullNode"
     data_key = "ayon.placeholder"
     item_class = PlaceholderItem
+
+    def _create_placeholder_node(
+            self, placeholder_data, session, node_type="NullNode"):
+        # Create node
+        placeholder_node = fx.Node(node_type)
+        placeholder_node.label = "PLACEHOLDER"
+        session.addNode(placeholder_node)
+        lib.set_new_node_position(placeholder_node)
+        return placeholder_node
 
     @lib.undo_chunk("Create placeholder")
     def create_placeholder(self, placeholder_data) -> PlaceholderItem:
@@ -60,11 +67,8 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
 
         placeholder_data["plugin_identifier"] = self.identifier
 
-        # Create node
-        placeholder_node = fx.Node(self.node_type)
-        placeholder_node.label = "PLACEHOLDER"
-        session.addNode(placeholder_node)
-        lib.set_new_node_position(placeholder_node)
+        placeholder_node = self._create_placeholder_node(
+            placeholder_data, session)
 
         fx.activate(placeholder_node)
 
@@ -87,15 +91,17 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
                            placeholder_item: PlaceholderItem,
                            placeholder_data: dict):
         node = placeholder_item.transient_data["node"]  # noqa
-        imprint(node, placeholder_data)
+        placeholder_data["plugin_identifier"] = self.identifier
+        imprint(node, placeholder_data, key=self.data_key)
 
     def _collect_placeholder_nodes(self) -> Dict[str, List[fx.Node]]:
         nodes = self.builder.get_shared_populate_data("placeholder_nodes")
         if nodes is None:
             # Populate cache
             session = fx.activeSession()
+            project = fx.activeProject()
             nodes_by_plugin_identifier = {}
-            for node in session.nodes:
+            for node in itertools.chain(session.nodes, project.sources):
                 node_data = read(node, key=self.data_key)
                 if not node_data:
                     continue
@@ -139,8 +145,14 @@ class SilhouettePlaceholderPlugin(PlaceholderPlugin):
     def delete_placeholder(self, placeholder: PlaceholderItem):
         """Remove placeholder if building was successful"""
         node = placeholder.transient_data["node"]  # noqa
-        session = node.session
-        session.removeNode(node)
+        if isinstance(node, fx.Node):
+            session = node.session
+            session.removeNode(node)
+        elif isinstance(node, fx.Source):
+            project = node.parent.parent  # Source -> SourceItem -> Project
+            project.removeItem(node)
+        else:
+            raise TypeError(f"Unsupported placeholder node: {node}")
 
 
 @lib.undo_chunk("Build workfile template")
@@ -166,7 +178,6 @@ def create_placeholder(*args):
     window = WorkfileBuildPlaceholderDialog(host, builder,
                                             parent=get_main_window())
     window.show()
-
 
 def update_placeholder(*args):
     host = registered_host()

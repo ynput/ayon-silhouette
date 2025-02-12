@@ -5,7 +5,7 @@ import logging
 import os
 import platform
 import zipfile
-from typing import Optional, Iterator, Tuple
+from typing import Optional, Iterator, List, Tuple, Dict
 
 from qtpy import QtCore, QtWidgets
 import fx
@@ -395,3 +395,157 @@ def unzip(source, destination):
     with _ZipFile(source) as zr:
         zr.extractall(destination)
     log.debug(f"Extracted '{source}' to '{destination}'")
+
+
+def get_connections(
+    node: fx.Node,
+    inputs=True,
+    outputs=True) -> Dict[fx.Port, fx.Port]:
+    """Return connections from destination ports to their source ports."""
+    connections: Dict[fx.Port, fx.Port] = {}
+    if inputs:
+        for input_destination in node.connectedInputs:
+            connections[input_destination] = input_destination.source
+    if outputs:
+        for output_source in node.connectedOutputs:
+            for target_destination in output_source.targets:
+                connections[target_destination] = output_source
+    return connections
+
+
+def get_input_port_by_name(node: fx.Node, port_name: str) -> Optional[fx.Port]:
+    """Return the input port with the given name."""
+    return next(
+        (port for port in node.inputs if port.name == port_name),
+        None
+    )
+
+
+def get_output_port_by_name(
+        node: fx.Node, port_name: str) -> Optional[fx.Port]:
+    """Return the output port with the given name."""
+    return next(
+        (port for port in node.outputs if port.name == port_name),
+        None
+    )
+
+
+@undo_chunk("Transfer connections")
+def transfer_connections(
+    source: fx.Node,
+    destination: fx.Node,
+    inputs: bool = True,
+    outputs: bool = True):
+    """Transfer connections from one node to another."""
+    # TODO: Match port by something else than name? (e.g. idx?)
+    # Transfer connections from inputs
+    if inputs:
+        for _input in source.connectedInputs:
+            name = _input.name
+            destination_input = get_input_port_by_name(destination, name)
+            if destination_input:
+                destination_input.disconnect()
+                _input.source.connect(destination_input)
+
+    # Transfer connections from outputs
+    if outputs:
+        for output in source.connectedOutputs:
+            name = output.name
+            destination_output = get_output_port_by_name(destination, name)
+            if destination_output:
+                for target in output.targets:
+                    target.disconnect()
+                    destination_output.connect(target)
+
+
+def copy_session_nodes(
+        source_session: fx.Session,
+        destination_session: fx.Session) -> List[fx.Node]:
+    """Merge all nodes from source session into destination session.
+
+    Arguments:
+        source_session (fx.Session): The source session to clone nodes from.
+        destination_session (fx.Session): The destination session to merge
+            into.
+
+    Returns:
+        List[fx.Node]: The cloned nodes in the destination session.
+    """
+    connections = {}
+    for node in source_session.nodes:
+        # We skip outputs because we are iterating all nodes
+        # so we could automatically also collect the outputs if we
+        # collect all their inputs
+        connections.update(get_connections(node, outputs=False))
+
+    # Create clones of the nodes from the source session
+    source_node_to_clone_node: Dict[fx.Node, fx.Node] = {
+        node: node.clone() for node in source_session.nodes
+    }
+
+    # Add all clones to the destination session
+    for node in source_node_to_clone_node.values():
+        destination_session.addNode(node)
+
+    # Re-apply all their connections
+    for destination, source in connections.items():
+        source_node = source_node_to_clone_node[source.node]
+        destination_node = source_node_to_clone_node[destination.node]
+        source_port = get_output_port_by_name(source_node,
+                                              source.name)
+        destination_port = get_input_port_by_name(destination_node,
+                                                  destination.name)
+        source_port.connect(destination_port)
+
+    return list(source_node_to_clone_node.values())
+
+
+@undo_chunk("Import project")
+def import_project(
+    path,
+    merge_sessions=True):
+    """Import Silhouette project into current project.
+
+    Silhouette can't 'import' projects natively, so instead we will use our
+    own logic to load the content from a project file into the currently
+    active project.
+
+    Arguments:
+        path (str): The project path to import. Since Silhouette projects
+            are folders this should be the path to the project folder.
+        merge_sessions (bool): When enabled, sessions with the same label
+            will be 'merged' by adding all nodes of the imported session to
+            the existing session.
+
+    """
+    original_project = fx.activeProject()
+    if not original_project:
+        # Open a project
+        original_project = fx.Project()
+        fx.setActiveProject(original_project)
+
+    merge_project = fx.loadProject(path)
+
+    # Revert to original project
+    fx.setActiveProject(original_project)
+
+    # Add sources from the other project
+    for source in merge_project.sources:
+        original_project.addItem(source)
+
+    # Merge sessions by label if there's a matching one
+    sessions_by_label = {
+        session.label: session for session in original_project.sessions
+    }
+    for merge_session in merge_project.sessions:
+        if merge_sessions and merge_session.label in sessions_by_label:
+            original_session = sessions_by_label[merge_session.label]
+            copy_session_nodes(merge_session, original_session)
+        else:
+            # Add the session
+            original_project.addItem(merge_session.clone())
+
+            # For niceness - set it as active session if current project has
+            # no active session
+            if not fx.activeSession():
+                fx.setActiveSession(merge_session)
