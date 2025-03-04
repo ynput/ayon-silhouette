@@ -2,6 +2,7 @@ import pyblish.api
 import fx
 
 from ayon_core.pipeline import publish
+from ayon_silhouette.api import lib
 
 
 class ValidateTrackers(pyblish.api.InstancePlugin):
@@ -16,8 +17,7 @@ class ValidateTrackers(pyblish.api.InstancePlugin):
         # Node should be a node that contains 'tracker' children
         node = instance.data["transientData"]["instance_node"]
         if not any(
-            tracker
-            for tracker in node.children
+            tracker for tracker, _label in lib.iter_children(node)
             if isinstance(tracker, fx.Tracker)
         ):
             raise publish.PublishValidationError(
