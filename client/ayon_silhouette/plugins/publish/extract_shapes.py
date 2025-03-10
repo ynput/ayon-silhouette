@@ -18,6 +18,8 @@ class ExtractNukeShapes(publish.Extractor):
     extension = "nk"
     io_module = "Nuke 9+ Shapes"
 
+    settings_category = "silhouette"
+
     capture_messageboxes = False
 
     def process(self, instance):

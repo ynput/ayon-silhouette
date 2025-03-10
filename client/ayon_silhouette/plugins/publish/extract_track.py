@@ -18,6 +18,8 @@ class SilhouetteExtractAfterEffectsTrack(publish.Extractor):
     extension = "txt"
     io_module = "After Effects"
 
+    settings_category = "silhouette"
+
     capture_messageboxes = True
 
     def process(self, instance):
