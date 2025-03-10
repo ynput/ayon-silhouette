@@ -1,7 +1,4 @@
-from ayon_server.settings import (
-    BaseSettingsModel,
-    SettingsField
-)
+from ayon_server.settings import BaseSettingsModel, SettingsField
 
 
 class BasicEnabledStatesModel(BaseSettingsModel):
@@ -29,16 +26,20 @@ class PublishPluginsModel(BaseSettingsModel):
     ExtractNukeShapes: BasicEnabledStatesModel = SettingsField(
         default_factory=BasicEnabledStatesModel,
         title="Extract Nuke 9+ .nk Shapes",
-        section="Extract Shapes")
+        section="Extract Shapes",
+    )
     ExtractSilhouetteShapes: BasicEnabledStatesModel = SettingsField(
         default_factory=BasicEnabledStatesModel,
-        title="Extract Silhouette .fxs Shapes.")
+        title="Extract Silhouette .fxs Shapes.",
+    )
     ExtractShakeShapes: BasicEnabledStatesModel = SettingsField(
         default_factory=BasicEnabledStatesModel,
-        title="Extract Shake 4.x .ssf Shapes")
+        title="Extract Shake 4.x .ssf Shapes",
+    )
     ExtractFusionShapes: BasicEnabledStatesModel = SettingsField(
         default_factory=BasicEnabledStatesModel,
-        title="Extract Fusion .settings Shapes")
+        title="Extract Fusion .settings Shapes",
+    )
 
     # Trackers
     SilhouetteExtractAfterEffectsTrack: BasicEnabledStatesModel = (
@@ -50,7 +51,8 @@ class PublishPluginsModel(BaseSettingsModel):
     )
     SilhouetteExtractNuke5Track: BasicEnabledStatesModel = SettingsField(
         default_factory=BasicEnabledStatesModel,
-        title="Extract Nuke 5 .nk Trackers")
+        title="Extract Nuke 5 .nk Trackers",
+    )
 
 
 DEFAULT_SILHOUETTE_PUBLISH_SETTINGS = {
