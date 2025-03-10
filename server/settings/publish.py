@@ -41,10 +41,13 @@ class PublishPluginsModel(BaseSettingsModel):
         title="Extract Fusion .settings Shapes")
 
     # Trackers
-    SilhouetteExtractAfterEffectsTrack: BasicEnabledStatesModel = SettingsField(
-        default_factory=BasicEnabledStatesModel,
-        title="Extract After Effects .txt Trackers",
-        section="Extract Trackers")
+    SilhouetteExtractAfterEffectsTrack: BasicEnabledStatesModel = (
+        SettingsField(
+            default_factory=BasicEnabledStatesModel,
+            title="Extract After Effects .txt Trackers",
+            section="Extract Trackers",
+        )
+    )
     SilhouetteExtractNuke5Track: BasicEnabledStatesModel = SettingsField(
         default_factory=BasicEnabledStatesModel,
         title="Extract Nuke 5 .nk Trackers")
