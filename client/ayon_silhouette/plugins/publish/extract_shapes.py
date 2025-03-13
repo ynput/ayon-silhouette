@@ -8,7 +8,8 @@ from ayon_core.pipeline import publish
 from ayon_silhouette.api import lib
 
 
-class ExtractNukeShapes(publish.Extractor):
+class ExtractNukeShapes(publish.Extractor,
+                        publish.OptionalPyblishPluginMixin):
     """Extract node as Nuke 9+ Shapes."""
 
     label = "Extract Nuke 9+ Shapes"
@@ -18,9 +19,13 @@ class ExtractNukeShapes(publish.Extractor):
     extension = "nk"
     io_module = "Nuke 9+ Shapes"
 
+    settings_category = "silhouette"
+
     capture_messageboxes = False
 
     def process(self, instance):
+        if not self.is_active(instance.data):
+            return
 
         # Define extract output file path
         dir_path = self.staging_dir(instance)
