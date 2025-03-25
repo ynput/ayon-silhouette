@@ -28,6 +28,10 @@ class PublishPluginsModel(BaseSettingsModel):
         title="Extract Nuke 9+ .nk Shapes",
         section="Extract Shapes",
     )
+    ExtractNuke62Shapes: BasicEnabledStatesModel = SettingsField(
+        default_factory=BasicEnabledStatesModel,
+        title="Extract Nuke 6.2+ .nk Shapes",
+    )
     ExtractSilhouetteShapes: BasicEnabledStatesModel = SettingsField(
         default_factory=BasicEnabledStatesModel,
         title="Extract Silhouette .fxs Shapes.",
@@ -58,6 +62,11 @@ class PublishPluginsModel(BaseSettingsModel):
 DEFAULT_SILHOUETTE_PUBLISH_SETTINGS = {
     "ExtractNukeShapes": {
         "enabled": True,
+        "optional": False,
+        "active": True,
+    },
+    "ExtractNuke62Shapes": {
+        "enabled": False,
         "optional": False,
         "active": True,
     },

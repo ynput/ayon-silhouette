@@ -1,5 +1,6 @@
 import os
 import contextlib
+from typing import Optional
 
 from qtpy import QtWidgets
 import fx
@@ -18,6 +19,9 @@ class ExtractNukeShapes(publish.Extractor,
 
     extension = "nk"
     io_module = "Nuke 9+ Shapes"
+
+    # When set, override the representation name and `outputName`
+    override_name: Optional[str] = None
 
     settings_category = "silhouette"
 
@@ -54,17 +58,29 @@ class ExtractNukeShapes(publish.Extractor,
                 fx.io_modules[self.io_module].export(path)
 
         representation = {
-            "name": self.extension,
+            "name": self.override_name or self.extension,
             "ext": self.extension,
             "files": filename,
             "stagingDir": dir_path,
         }
+        if self.override_name:
+            representation["outputName"] = self.override_name
         instance.data.setdefault("representations", []).append(representation)
 
         self.log.debug(f"Extracted instance '{instance.name}' to: {path}")
 
     def on_captured_messagebox(self, messagebox: QtWidgets.QMessageBox):
         pass
+
+
+class ExtractNuke62Shapes(ExtractNukeShapes):
+    """Extract node as Nuke 6.2+ Shapes."""
+    families = ["matteshapes"]
+    label = "Extract Nuke 6.2+ Shapes"
+    io_module = "Nuke 6.2+ Shapes"
+
+    # Use nk62 name to avoid conflicts with the nuke 9+ shapes output
+    override_name = "nk62"
 
 
 class ExtractFusionShapes(ExtractNukeShapes):
