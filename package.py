@@ -6,7 +6,7 @@ name = "silhouette"
 title = "Silhouette"
 
 # Required: Valid semantic version (https://semver.org/)
-version = "0.1.1+dev"
+version = "0.1.2"
 
 # Name of client code directory imported in AYON launcher
 # - do not specify if there is no client code
