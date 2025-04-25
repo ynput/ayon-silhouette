@@ -58,9 +58,9 @@ class ExtractNukeShapes(publish.Extractor,
                 shape for shape, _label in lib.iter_children(node)
                 if isinstance(shape, allowed_types)
             ]
-            self.log.info(shapes)
 
         with lib.maintained_selection():
+            fx.activate(node)
             fx.select(shapes)
             with contextlib.ExitStack() as stack:
                 self.log.debug(f"Exporting '{self.io_module}' to: {path}")
