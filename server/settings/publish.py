@@ -21,6 +21,17 @@ class BasicEnabledStatesModel(BaseSettingsModel):
     )
 
 
+class SilhouetteExtractWorkfileModel(BaseSettingsModel):
+    add_project_sfx: bool = SettingsField(
+        False,
+        title="Add project.sfx representation",
+        description=(
+            "Add the project.sfx file as a separate `sfx_project` "
+            "representation."
+        ),
+    )
+
+
 class PublishPluginsModel(BaseSettingsModel):
     # Shapes
     ExtractNukeShapes: BasicEnabledStatesModel = SettingsField(
@@ -56,6 +67,13 @@ class PublishPluginsModel(BaseSettingsModel):
     SilhouetteExtractNuke5Track: BasicEnabledStatesModel = SettingsField(
         default_factory=BasicEnabledStatesModel,
         title="Extract Nuke 5 .nk Trackers",
+    )
+
+    # Workfile
+    SilhouetteExtractWorkfile: SilhouetteExtractWorkfileModel = SettingsField(
+        default_factory=SilhouetteExtractWorkfileModel,
+        title="Extract Workfile",
+        section="Extract Workfile",
     )
 
 
@@ -94,5 +112,8 @@ DEFAULT_SILHOUETTE_PUBLISH_SETTINGS = {
         "enabled": True,
         "optional": False,
         "active": True,
+    },
+    "SilhouetteExtractWorkfile": {
+        "add_project_sfx": False,
     },
 }

@@ -12,6 +12,8 @@ class SilhouetteExtractWorkfile(publish.Extractor):
     hosts = ["silhouette"]
     families = ["workfile"]
 
+    add_project_sfx = False
+
     def process(self, instance):
         """Extract the current working file as .zip"""
         # Note that Silhouette project workfiles are actually folders,
@@ -37,3 +39,15 @@ class SilhouetteExtractWorkfile(publish.Extractor):
             "files": filename,
             "stagingDir": staging_dir,
         })
+
+        if self.add_project_sfx:
+            # Add the project.sfx file as a separate representation
+            project_sfx = os.path.join(current_file, "project.sfx")
+
+            instance.data.setdefault("representations", []).append({
+                "outputName": "project",
+                "name": "sfx_project",
+                "ext": "sfx",
+                "files": os.path.basename(project_sfx),
+                "stagingDir": os.path.dirname(project_sfx),
+            })
