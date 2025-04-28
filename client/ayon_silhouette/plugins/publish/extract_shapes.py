@@ -42,10 +42,21 @@ class ExtractNukeShapes(publish.Extractor,
         shape_ids = instance.data.get("creator_attributes", {}).get("shapes")
         if shape_ids:
             shapes = [fx.findObject(shape_id) for shape_id in shape_ids]
+
+            # Include parent layers for the selected shapes, otherwise the
+            # layers will be excluded, and hence the structure will be lost
+            layers = set()
+            for shape in shapes:
+                parent = shape.parent
+                while isinstance(parent, fx.Layer):
+                    layers.add(parent)
+                    parent = parent.parent
+            shapes.extend(layers)
         else:
+            allowed_types = (fx.Shape, fx.Layer)
             shapes = [
                 shape for shape, _label in lib.iter_children(node)
-                if isinstance(shape, fx.Shape)
+                if isinstance(shape, allowed_types)
             ]
 
         with lib.maintained_selection():
