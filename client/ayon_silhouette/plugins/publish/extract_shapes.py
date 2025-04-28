@@ -60,6 +60,7 @@ class ExtractNukeShapes(publish.Extractor,
             ]
 
         with lib.maintained_selection():
+            fx.activate(node)
             fx.select(shapes)
             with contextlib.ExitStack() as stack:
                 self.log.debug(f"Exporting '{self.io_module}' to: {path}")
