@@ -283,6 +283,8 @@ class SilhouetteImportLoader(SilhouetteLoader):
             fx.activeSession().addNode(node)
             lib.set_new_node_position(node)
 
+            # Label the newly generated using the product name
+            node.label = context["product"]["name"]
 
         # Import the file
         fx.activate(node)
