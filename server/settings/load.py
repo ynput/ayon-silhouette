@@ -2,14 +2,14 @@ from ayon_server.settings import BaseSettingsModel, SettingsField
 
 
 class SourceLoaderModel(BaseSettingsModel):
-    set_start_frame_on_load: bool = SettingsField(
+    set_session_frame_range_on_load: bool = SettingsField(
         default=False,
-        title="Set Start Frame on Load",
+        title="Set Session Frame Range on Load",
         description=(
-            "When loading a source, set the active session's start frame to "
-            "the start frame of the loaded source. This may be helpful "
-            "because Silhouette aligns loaded sources with the start frame of "
-            "the session."
+            "When loading a source, set the active session's start frame and "
+            "duration to the frame range of the loaded source. This may be "
+            "helpful because Silhouette aligns loaded sources with the start "
+            "frame of the session."
         ),
     )
 
@@ -23,6 +23,6 @@ class LoadPluginsModel(BaseSettingsModel):
 
 DEFAULT_SILHOUETTE_LOAD_SETTINGS = {
     "SourceLoader": {
-        "set_start_frame_on_load": False,
+        "set_session_frame_range_on_load": False,
     }
 }

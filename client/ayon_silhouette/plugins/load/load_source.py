@@ -23,15 +23,15 @@ class SourceLoader(plugin.SilhouetteLoader):
         ext.lstrip(".") for ext in VIDEO_EXTENSIONS.union(IMAGE_EXTENSIONS)
     }
 
-    set_start_frame_on_load = False
+    set_session_frame_range_on_load = False
 
     @classmethod
     def get_options(cls, contexts):
         return [
             BoolDef(
-                "set_start_frame_on_load",
-                label="Set Start Frame on Load",
-                default=cls.set_start_frame_on_load
+                "set_session_frame_range_on_load",
+                label="Set Session Frame Range on Load",
+                default=cls.set_session_frame_range_on_load
             )
         ]
 
@@ -44,9 +44,10 @@ class SourceLoader(plugin.SilhouetteLoader):
         filepath = self.filepath_from_context(context)
 
         if options.get(
-            "set_start_frame_on_load", self.set_start_frame_on_load
+            "set_session_frame_range_on_load",
+            self.set_session_frame_range_on_load
         ):
-            self._set_start_frame_from_context(context)
+            self._set_session_frame_range(context)
 
         # Add Source item to the project
         source = fx.Source(filepath)
@@ -119,14 +120,14 @@ class SourceLoader(plugin.SilhouetteLoader):
         """Support switch to another representation."""
         self.update(container, context)
 
-    def _set_start_frame_from_context(self, context: dict):
+    def _set_session_frame_range(self, context: dict):
 
         # Get the start frame from the loaded product
         lookup_entities = [
             context["representation"],
             context["version"]
         ]
-        attrs = {"frameStart", "handleStart"}
+        attrs = {"frameStart", "frameEnd", "handleStart", "handleEnd"}
         values = {}
         for attr in attrs:
             for entity in lookup_entities:
@@ -142,10 +143,23 @@ class SourceLoader(plugin.SilhouetteLoader):
 
         active_session = fx.activeSession()
         if not active_session:
-            self.log.warning("No active session, cannot set start frame.")
+            self.log.warning("No active session, cannot set frame range.")
             return
 
+        # Set start frame based on start frame with handle
         frame_start = values["frameStart"]
         handle_start = values.get("handleStart", 0)
         frame_start_handle = frame_start - handle_start
         active_session.startFrame = frame_start_handle
+
+        # Set duration based on end frame from start frame
+        if "frameEnd" not in values:
+            self.log.warning(
+                "No end frame data found, cannot set duration."
+            )
+            return
+
+        frame_end = values["frameEnd"]
+        handle_end = values.get("handleEnd", 0)
+        frame_end_handle = frame_end + handle_end
+        active_session.duration = (frame_end_handle - frame_start_handle) + 1
