@@ -116,7 +116,10 @@ class SourceLoader(plugin.SilhouetteLoader):
 
         return super().filepath_from_context(context)
 
-    def _get_label(self, context: dict, part_name: Optional[str] = None) -> str:
+    def _get_label(
+        self, context: dict, part_name: Optional[str] = None
+    ) -> str:
+        """Return product name as label with the part name if provided."""
         label = context["product"]["name"]
         if part_name:
             label = f"{label} [{part_name}]"
