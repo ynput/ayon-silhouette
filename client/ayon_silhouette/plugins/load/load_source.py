@@ -1,4 +1,6 @@
+from __future__ import annotations
 import os
+from typing import Any, Optional
 
 import fx
 import clique
@@ -8,7 +10,7 @@ from ayon_silhouette.api import plugin, lib
 from ayon_core.pipeline import Anatomy
 from ayon_core.lib import BoolDef
 from ayon_core.lib.transcoding import (
-    VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
+    VIDEO_EXTENSIONS, IMAGE_EXTENSIONS, get_oiio_info_for_input
 )
 
 
@@ -49,23 +51,34 @@ class SourceLoader(plugin.SilhouetteLoader):
         options = options or {}
         load_all_parts = options.get("load_all_parts", True)
 
-        has_multiple_parts = os.path.splitext(filepath)[-1].lower() in {
+        # If the file is not an EXR or SXR, we can only load one part so force
+        # disable loading multiple parts.
+        if load_all_parts and os.path.splitext(filepath)[-1].lower() not in {
             ".exr", ".sxr"
-        } and fx.Source(filepath, part=1).video
+        }:
+            load_all_parts = False
 
-        part = 0
-        while True:
+        # If loading all parts, find the info for the subimages so we can label
+        # them correctly.
+        info: list[dict[str, Any]] = []
+        parts = 1
+        if load_all_parts:
+            raw_filepath = super().filepath_from_context(context)
+            info = get_oiio_info_for_input(raw_filepath, subimages=True)
+            parts = len(info)
+
+        for part in range(parts):
             source = fx.Source(filepath, part=part)
-
-            # Check whether the chosen part has any video or audio, if not
-            # we assume the part does not exist and we stop loading.
-            if not source.video and not source.audio:
-                if part == 0:
-                    self.log.warning("Loaded source has no video or audio.")
-                break
+            part_name = None
+            if parts > 1:
+                # Use subimage name as part name
+                part_attribs = info[part].get("attribs", {})
+                part_name = part_attribs.get(
+                    "name", part_attribs.get("oiio:subimage_name", "")
+                )
 
             # Provide a nice label indicating the product
-            source.label = self._get_label(context)
+            source.label = self._get_label(context, part_name=part_name)
             project.addItem(source)
 
             # property.hidden = True  # hide the attribute
@@ -75,12 +88,6 @@ class SourceLoader(plugin.SilhouetteLoader):
                 "loader": str(self.__class__.__name__),
                 "representation": context["representation"]["id"],
             })
-
-            if not has_multiple_parts or not load_all_parts:
-                # Never load more than one part
-                break
-
-            part += 1
 
     def filepath_from_context(self, context):
         # If the media is a sequence of files we need to load it with the
@@ -105,8 +112,12 @@ class SourceLoader(plugin.SilhouetteLoader):
 
         return super().filepath_from_context(context)
 
-    def _get_label(self, context):
-        return context["product"]["name"]
+    def _get_label(self, context: dict, part_name: Optional[str] = None) -> str:
+        label = context["product"]["name"]
+        if part_name:
+            label = f"{label} [{part_name}]"
+
+        return label
 
     @lib.undo_chunk("Update Source")
     def update(self, container, context):
