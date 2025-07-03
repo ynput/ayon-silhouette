@@ -34,8 +34,12 @@ class SourceLoader(plugin.SilhouetteLoader):
                 "load_all_parts",
                 label="Load All Parts",
                 default=True,
-                tooltip="Load all parts of the source, "
-                        "not just the first one."),
+                tooltip=(
+                    "Load all subimages/parts of the media instead of only "
+                    "the first subimage. This can be useful for e.g. "
+                    "Stereo EXR files."
+                ),
+            )
         ]
 
     @lib.undo_chunk("Load Source")
