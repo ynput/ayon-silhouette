@@ -13,6 +13,9 @@ from ayon_core.lib.transcoding import (
     VIDEO_EXTENSIONS, IMAGE_EXTENSIONS, get_oiio_info_for_input
 )
 
+# Extensions for subimages that can be loaded with multiple parts
+SUBIMAGE_EXTENSIONS: set[str] = {".exr", ".sxr"}
+
 
 class SourceLoader(plugin.SilhouetteLoader):
     """Load media source."""
@@ -57,9 +60,11 @@ class SourceLoader(plugin.SilhouetteLoader):
 
         # If the file is not an EXR or SXR, we can only load one part so force
         # disable loading multiple parts.
-        if load_all_parts and os.path.splitext(filepath)[-1].lower() not in {
-            ".exr", ".sxr"
-        }:
+        if (
+            load_all_parts
+            and os.path.splitext(filepath)[-1].lower()
+            not in SUBIMAGE_EXTENSIONS
+        ):
             load_all_parts = False
 
         # If loading all parts, find the info for the subimages so we can label
