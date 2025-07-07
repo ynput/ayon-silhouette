@@ -30,6 +30,8 @@ class SourceLoader(plugin.SilhouetteLoader):
         ext.lstrip(".") for ext in VIDEO_EXTENSIONS.union(IMAGE_EXTENSIONS)
     }
 
+    set_session_frame_range_on_load = False
+
     @classmethod
     def get_options(cls, contexts):
         return [
@@ -42,7 +44,12 @@ class SourceLoader(plugin.SilhouetteLoader):
                     "the first subimage. This can be useful for e.g. "
                     "Stereo EXR files."
                 ),
-            )
+            ),
+            BoolDef(
+                "set_session_frame_range_on_load",
+                label="Set Session Frame Range on Load",
+                default=cls.set_session_frame_range_on_load
+            ),
         ]
 
     @lib.undo_chunk("Load Source")
@@ -52,6 +59,12 @@ class SourceLoader(plugin.SilhouetteLoader):
             raise RuntimeError("No active project found.")
 
         filepath = self.filepath_from_context(context)
+
+        if options.get(
+            "set_session_frame_range_on_load",
+            self.set_session_frame_range_on_load
+        ):
+            self._set_session_frame_range(context)
 
         # A source file may contain multiple parts, such as a left view
         # and a right view in a single EXR.
@@ -152,3 +165,50 @@ class SourceLoader(plugin.SilhouetteLoader):
     def switch(self, container, context):
         """Support switch to another representation."""
         self.update(container, context)
+
+    def _set_session_frame_range(self, context: dict):
+
+        # Get the start frame from the loaded product
+        lookup_entities = [
+            # TODO: Allow taking from representation if it actually contains
+            #  more sensible data. Currently it seems to just contain the
+            #  task frame ranges by default?
+            # context["representation"],
+            context["version"]
+        ]
+        attrs = {"frameStart", "frameEnd", "handleStart", "handleEnd"}
+        values = {}
+        for attr in attrs:
+            for entity in lookup_entities:
+                if attr in entity.get("attrib", {}):
+                    values[attr] = entity["attrib"][attr]
+                    break
+
+        if "frameStart" not in values:
+            self.log.warning(
+                "No start frame data found, cannot set start frame."
+            )
+            return
+
+        active_session = fx.activeSession()
+        if not active_session:
+            self.log.warning("No active session, cannot set frame range.")
+            return
+
+        # Set start frame based on start frame with handle
+        frame_start = values["frameStart"]
+        handle_start = values.get("handleStart", 0)
+        frame_start_handle = frame_start - handle_start
+        active_session.startFrame = frame_start_handle
+
+        # Set duration based on end frame from start frame
+        if "frameEnd" not in values:
+            self.log.warning(
+                "No end frame data found, cannot set duration."
+            )
+            return
+
+        frame_end = values["frameEnd"]
+        handle_end = values.get("handleEnd", 0)
+        frame_end_handle = frame_end + handle_end
+        active_session.duration = (frame_end_handle - frame_start_handle) + 1
