@@ -124,7 +124,10 @@ class SourceLoader(plugin.SilhouetteLoader):
 
         # Get the start frame from the loaded product
         lookup_entities = [
-            context["representation"],
+            # TODO: Allow taking from representation if it actually contains
+            #  more sensible data. Currently it seems to just contain the
+            #  task frame ranges by default?
+            # context["representation"],
             context["version"]
         ]
         attrs = {"frameStart", "frameEnd", "handleStart", "handleEnd"}
