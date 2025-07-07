@@ -264,7 +264,7 @@ def set_bit_depth_from_settings(session, project_settings: dict):
         bit_depth = depth_mapping[bit_depth_str]
     except KeyError:
         raise ValueError(
-            f"Unsupported bit depth: {bit_depth_str}."
+            f"Unsupported bit depth: {bit_depth_str}. "
             f"Supported values are: {', '.join(depth_mapping.keys())}."
         )
     with undo_chunk("Set session bit depth"):
