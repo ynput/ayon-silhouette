@@ -83,14 +83,17 @@ def collect_animation_defs(create_context, fps=False):
 
 
 @contextlib.contextmanager
-def maintained_selection():
+def maintained_selection(preserve_active_node=True):
     """Maintain selection during context."""
 
+    previous_active_node = fx.activeNode()
     previous_selection = fx.selection()
     try:
         yield
     finally:
         fx.select(previous_selection)
+        if preserve_active_node and previous_active_node:
+            fx.activate(previous_active_node)
 
 
 @contextlib.contextmanager
