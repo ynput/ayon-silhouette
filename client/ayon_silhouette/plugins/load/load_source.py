@@ -1,3 +1,7 @@
+from __future__ import annotations
+import os
+from typing import Any, Optional
+
 import fx
 import clique
 
@@ -6,8 +10,11 @@ from ayon_silhouette.api import plugin, lib
 from ayon_core.pipeline import Anatomy
 from ayon_core.lib import BoolDef
 from ayon_core.lib.transcoding import (
-    VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
+    VIDEO_EXTENSIONS, IMAGE_EXTENSIONS, get_oiio_info_for_input
 )
+
+# Extensions for subimages that can be loaded with multiple parts
+SUBIMAGE_EXTENSIONS: set[str] = {".exr", ".sxr"}
 
 
 class SourceLoader(plugin.SilhouetteLoader):
@@ -29,10 +36,20 @@ class SourceLoader(plugin.SilhouetteLoader):
     def get_options(cls, contexts):
         return [
             BoolDef(
+                "load_all_parts",
+                label="Load All Parts",
+                default=True,
+                tooltip=(
+                    "Load all subimages/parts of the media instead of only "
+                    "the first subimage. This can be useful for e.g. "
+                    "Stereo EXR files."
+                ),
+            ),
+            BoolDef(
                 "set_session_frame_range_on_load",
                 label="Set Session Frame Range on Load",
                 default=cls.set_session_frame_range_on_load
-            )
+            ),
         ]
 
     @lib.undo_chunk("Load Source")
@@ -49,28 +66,50 @@ class SourceLoader(plugin.SilhouetteLoader):
         ):
             self._set_session_frame_range(context)
 
-        # Add Source item to the project
-        source = fx.Source(filepath)
+        # A source file may contain multiple parts, such as a left view
+        # and a right view in a single EXR.
+        options = options or {}
+        load_all_parts = options.get("load_all_parts", True)
 
-        # Provide a nice label indicating the product
-        source.label = self._get_label(context)
-        project.addItem(source)
+        # If the file is not an EXR or SXR, we can only load one part so force
+        # disable loading multiple parts.
+        if (
+            load_all_parts
+            and os.path.splitext(filepath)[-1].lower()
+            not in SUBIMAGE_EXTENSIONS
+        ):
+            load_all_parts = False
 
-        # property.hidden = True  # hide the attribute
-        lib.imprint(source, data={
-            "name": str(name),
-            "namespace": str(namespace),
-            "loader": str(self.__class__.__name__),
-            "representation": context["representation"]["id"],
-        })
+        # If loading all parts, find the info for the subimages so we can label
+        # them correctly.
+        info: list[dict[str, Any]] = []
+        parts = 1
+        if load_all_parts:
+            raw_filepath = super().filepath_from_context(context)
+            info = get_oiio_info_for_input(raw_filepath, subimages=True)
+            parts = len(info)
 
-        # container = pipeline.containerise(
-        #     name=str(name),
-        #     namespace=str(namespace),
-        #     nodes=nodes,
-        #     context=context,
-        #     loader=str(self.__class__.__name__),
-        # )
+        for part in range(parts):
+            source = fx.Source(filepath, part=part)
+            part_name = None
+            if parts > 1:
+                # Use subimage name as part name
+                part_attribs = info[part].get("attribs", {})
+                part_name = part_attribs.get(
+                    "name", part_attribs.get("oiio:subimage_name", "")
+                )
+
+            # Provide a nice label indicating the product
+            source.label = self._get_label(context, part_name=part_name)
+            project.addItem(source)
+
+            # property.hidden = True  # hide the attribute
+            lib.imprint(source, data={
+                "name": str(name),
+                "namespace": str(namespace),
+                "loader": str(self.__class__.__name__),
+                "representation": context["representation"]["id"],
+            })
 
     def filepath_from_context(self, context):
         # If the media is a sequence of files we need to load it with the
@@ -95,8 +134,15 @@ class SourceLoader(plugin.SilhouetteLoader):
 
         return super().filepath_from_context(context)
 
-    def _get_label(self, context):
-        return context["product"]["name"]
+    def _get_label(
+        self, context: dict, part_name: Optional[str] = None
+    ) -> str:
+        """Return product name as label with the part name if provided."""
+        label = context["product"]["name"]
+        if part_name:
+            label = f"{label} [{part_name}]"
+
+        return label
 
     @lib.undo_chunk("Update Source")
     def update(self, container, context):
