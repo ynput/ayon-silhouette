@@ -12,8 +12,9 @@ import fx
 import tools.window
 
 from ayon_core.lib import NumberDef
+from ayon_core.pipeline import get_current_project_name
 from ayon_core.pipeline.context_tools import get_current_task_entity
-
+from ayon_core.settings import get_project_settings
 
 AYON_CONTAINERS = "AYON_CONTAINERS"
 JSON_PREFIX = "JSON::"
@@ -245,7 +246,36 @@ def set_frame_range_from_entity(session, task_entity):
         session.duration = (frame_end - frame_start) + 1
 
 
-def reset_session_settings(session=None, task_entity=None):
+def set_bit_depth_from_settings(session, project_settings: dict):
+    """Set the bit depth from project settings.
+
+    Args:
+        session (fx.Session): The Silhouette session.
+        project_settings (dict): Project settings containing bit depth.
+
+    """
+    depth_mapping = {
+        "8": fx.Depth_8,
+        "F16": fx.Depth_F16,
+        "F32": fx.Depth_F32,
+    }
+    bit_depth_str: str = project_settings["silhouette"]["session"]["bit_depth"]
+    try:
+        bit_depth = depth_mapping[bit_depth_str]
+    except KeyError:
+        raise ValueError(
+            f"Unsupported bit depth: {bit_depth_str}. "
+            f"Supported values are: {', '.join(depth_mapping.keys())}."
+        )
+    with undo_chunk("Set session bit depth"):
+        session.depth = bit_depth
+
+
+def reset_session_settings(
+    session=None,
+    task_entity=None,
+    project_settings=None
+):
     """Reset the session settings to the task context defaults."""
     if session is None:
         session = fx.activeSession()
@@ -254,10 +284,14 @@ def reset_session_settings(session=None, task_entity=None):
     if task_entity is None:
         task_entity = get_current_task_entity()
 
+    if project_settings is None:
+        project_name = get_current_project_name()
+        project_settings = get_project_settings(project_name)
+
     with undo_chunk("Reset session settings"):
         set_resolution_from_entity(session, task_entity)
         set_frame_range_from_entity(session, task_entity)
-
+        set_bit_depth_from_settings(session, project_settings)
 
 @contextlib.contextmanager
 def capture_messageboxes(callback):
