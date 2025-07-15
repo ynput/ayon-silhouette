@@ -111,6 +111,8 @@ class SourceLoader(plugin.SilhouetteLoader):
                 "representation": context["representation"]["id"],
             })
 
+            self._set_source_frame_start_property(source, context)
+
     def filepath_from_context(self, context):
         # If the media is a sequence of files we need to load it with the
         # frames in the path as in file.[start-end].ext
@@ -155,6 +157,8 @@ class SourceLoader(plugin.SilhouetteLoader):
         data["representation"] = context["representation"]["id"]
         lib.imprint(item, data)
 
+        self._set_source_frame_start_property(item, context)
+
     @lib.undo_chunk("Remove container")
     def remove(self, container):
         """Remove all sub containers"""
@@ -165,6 +169,32 @@ class SourceLoader(plugin.SilhouetteLoader):
     def switch(self, container, context):
         """Support switch to another representation."""
         self.update(container, context)
+
+    def _set_source_frame_start_property(
+            self, source: fx.Source, context: dict):
+        """Add a `frameStart` property to the source.
+
+        This property is used to define the start frame for the source, which
+        is used in the `object_created` hook to set the offset the loaded
+        source from the session's start frame - this way the media actually
+        plays from the expected frame even if the session does not start at
+        the same frame as the source.
+        """
+
+        if "frameStart" not in context["version"]["attrib"]:
+            return
+
+        # Set the start frame for the source
+        frame_start = context["version"]["attrib"]["frameStart"]
+
+        # Property to store the start frame, we always recreate it so tht
+        # the default value is the value we want it to be.
+        prop = source.property("frameStart")
+        if prop:
+            source.removeProperty(prop)
+
+        prop = fx.Property("frameStart", "Start Frame", frame_start)
+        source.addProperty(prop)
 
     def _set_session_frame_range(self, context: dict):
 
