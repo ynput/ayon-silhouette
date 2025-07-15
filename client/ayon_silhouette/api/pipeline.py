@@ -203,6 +203,7 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         hook.add("post_save", partial(emit_event, "save"))
         hook.add("post_load", partial(emit_event, "open"))
         hook.add("session_created", partial(emit_event, "new"))
+        hook.add("object_created", _on_object_created)
         # TODO: Detect a "save into another context" similar to Maya
 
     def open_workfile(self, filepath):
@@ -457,6 +458,49 @@ def _on_set_frame_range():
         return
     task_entity = get_current_task_entity()
     lib.set_frame_range_from_entity(session, task_entity)
+
+
+def _on_object_created(node):
+    """Hook called when a new object is created in the session.
+
+    This only gets called if a user drags and drops a source into the node
+    graph. It does not trigger when a node was added via e.g. Python or on
+    scene open or imports.
+
+    Whenever a SourceNode is created that has a primary stream FileSource
+    that happens to have a `frameStart` property, we offset the node so
+    that the node's offset from the session start makes it align with the
+    loaded plate's original frame range.
+    """
+    # TODO: We might want a way to enable/disable this behavior
+    if not node.isType("SourceNode"):
+        return
+
+    file_source = node.property("stream.primary").value
+    if not file_source:
+        return
+
+    frame_start_property = file_source.property("frameStart")
+    if not frame_start_property:
+        return
+
+    session = fx.activeSession()
+    if not session:
+        return
+
+    session_start = session.startFrame
+    media_start = frame_start_property.value
+    offset = media_start - session_start
+    if offset == 0:
+        # No offset needed
+        return
+
+    log.info(
+        "Offsetting source node %s to match session start frame with %s",
+        node.label,
+        offset
+    )
+    node.property("offset").value = offset
 
 
 def _generate_default_session():
