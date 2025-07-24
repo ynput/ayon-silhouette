@@ -20,10 +20,7 @@ from ayon_core.pipeline import (
 )
 from ayon_core.pipeline.load import any_outdated_containers
 from ayon_core.lib import emit_event, register_event_callback
-from ayon_core.pipeline.context_tools import (
-    version_up_current_workfile,
-    get_current_task_entity
-)
+from ayon_core.pipeline.context_tools import get_current_task_entity
 from ayon_core.settings import get_current_project_settings
 from ayon_core.tools.workfile_template_build import open_template_ui
 from . import lib
@@ -33,6 +30,14 @@ from .workfile_template_builder import (
     update_placeholder,
     build_workfile_template,
 )
+
+# Function 'save_next_version' was introduced in ayon-core 1.5.0
+try:
+    from ayon_core.pipeline.workfile import save_next_version
+except ImportError:
+    from ayon_core.pipeline.context_tools import (
+        version_up_current_workfile as save_next_version
+    )
 
 import fx
 import hook
@@ -111,7 +116,7 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
             if project_settings["core"]["tools"]["ayon_menu"].get(
                 "version_up_current_workfile"):
                     action = menu.addAction("Version Up Workfile")
-                    action.triggered.connect(version_up_current_workfile)
+                    action.triggered.connect(save_next_version)
         except KeyError:
             print("Version Up Workfile setting not found in "
                   "Core Settings. Please update Core Addon")
