@@ -463,6 +463,7 @@ def _on_set_frame_range():
     task_entity = get_current_task_entity()
     lib.set_frame_range_from_entity(session, task_entity)
 
+
 def _generate_default_session():
     """Create a project and session using the current context task attributes.
 
