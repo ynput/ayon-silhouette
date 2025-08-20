@@ -156,13 +156,16 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
 
         menu.addSeparator()
 
-        action = menu.addAction("Set Frame Range")
-        action.setToolTip("Set active session frame range")
-        action.triggered.connect(_on_set_frame_range)
+        menu_settings = project_settings["silhouette"].get("ayon_menu", {})
+        if menu_settings.get("set_frame_range", True):
+            action = menu.addAction("Set Frame Range")
+            action.setToolTip("Set active session frame range")
+            action.triggered.connect(_on_set_frame_range)
 
-        action = menu.addAction("Set Resolution")
-        action.setToolTip("Set active session resolution")
-        action.triggered.connect(_on_set_resolution)
+        if menu_settings.get("set_resolution", True):
+            action = menu.addAction("Set Resolution")
+            action.setToolTip("Set active session resolution")
+            action.triggered.connect(_on_set_resolution)
 
         menu.addSeparator()
 
