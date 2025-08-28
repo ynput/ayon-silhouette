@@ -242,8 +242,10 @@ def set_frame_range_from_entity(session, task_entity):
 
     with undo_chunk("Set session frame range"):
         session.frameRate = fps
-        session.startFrame = frame_start
+        # Set the duration before startFrame otherwise the viewer timeline
+        # will not update correctly, see: https://forum.borisfx.com/t/20386
         session.duration = (frame_end - frame_start) + 1
+        session.startFrame = frame_start
 
 
 def set_bit_depth_from_settings(session, project_settings: dict):
