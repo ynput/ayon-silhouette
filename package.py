@@ -6,12 +6,13 @@ name = "silhouette"
 title = "Silhouette"
 
 # Required: Valid semantic version (https://semver.org/)
-version = "0.1.4+dev"
+version = "0.1.5+dev"
 
 # Name of client code directory imported in AYON launcher
 # - do not specify if there is no client code
 client_dir = "ayon_silhouette"
 app_host_name = "silhouette"
+project_can_override_addon_version = True
 
 # Version compatibility with AYON server
 ayon_server_version = ">=1.1.2"

@@ -12,6 +12,14 @@ class SourceLoaderModel(BaseSettingsModel):
             "frame of the session."
         ),
     )
+    set_session_frame_range_on_update: bool = SettingsField(
+        default=False,
+        title="Set Session Frame Range on Update",
+        description=(
+            "When updating a source, force the active session's start frame "
+            "and duration to the frame range of the loaded source."
+        ),
+    )
 
 class LoadPluginsModel(BaseSettingsModel):
     # Shapes
@@ -24,5 +32,6 @@ class LoadPluginsModel(BaseSettingsModel):
 DEFAULT_SILHOUETTE_LOAD_SETTINGS = {
     "SourceLoader": {
         "set_session_frame_range_on_load": False,
+        "set_session_frame_range_on_update": False,
     }
 }
