@@ -31,6 +31,7 @@ class SourceLoader(plugin.SilhouetteLoader):
     }
 
     set_session_frame_range_on_load = False
+    set_session_frame_range_on_update = False
 
     @classmethod
     def get_options(cls, contexts):
@@ -155,6 +156,9 @@ class SourceLoader(plugin.SilhouetteLoader):
         data["representation"] = context["representation"]["id"]
         lib.imprint(item, data)
 
+        if self.set_session_frame_range_on_update:
+            self._set_session_frame_range(context)
+
     @lib.undo_chunk("Remove container")
     def remove(self, container):
         """Remove all sub containers"""
@@ -199,16 +203,33 @@ class SourceLoader(plugin.SilhouetteLoader):
         frame_start = values["frameStart"]
         handle_start = values.get("handleStart", 0)
         frame_start_handle = frame_start - handle_start
-        active_session.startFrame = frame_start_handle
 
         # Set duration based on end frame from start frame
-        if "frameEnd" not in values:
+        duration = active_session.duration
+        if "frameEnd" in values:
+            frame_end = values["frameEnd"]
+            handle_end = values.get("handleEnd", 0)
+            frame_end_handle = frame_end + handle_end
+            duration = (frame_end_handle - frame_start_handle) + 1
+        else:
             self.log.warning(
                 "No end frame data found, cannot set duration."
             )
+
+        changes = False
+        if active_session.startFrame != frame_start_handle:
+            print(f"Updating session start frame to: {frame_start_handle}")
+            changes = True
+        if active_session.duration != duration:
+            print(f"Updating session duration to: {duration}")
+            changes = True
+        if not changes:
+            # Do not enforce viewer timeline to 'revert' to the session
+            # start/end if there are no session changes, so that we leave the
+            # artist's work area intact as much as possible.
             return
 
-        frame_end = values["frameEnd"]
-        handle_end = values.get("handleEnd", 0)
-        frame_end_handle = frame_end + handle_end
-        active_session.duration = (frame_end_handle - frame_start_handle) + 1
+        # Set the duration before startFrame otherwise the viewer timeline
+        # will not update correctly, see: https://forum.borisfx.com/t/20386
+        active_session.duration = duration
+        active_session.startFrame = frame_start_handle
