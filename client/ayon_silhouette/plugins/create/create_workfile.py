@@ -39,12 +39,12 @@ class CreateWorkfile(AutoCreator):
         variant = self.default_variant
         if not workfile_instance:
             product_name = self.get_product_name(
-                project_name,
-                folder_entity,
-                task_entity,
-                variant,
-                host_name,
-                project_entity=project_entity
+                project_name=project_name,
+                project_entity=project_entity,
+                folder_entity=folder_entity,
+                task_entity=task_entity,
+                variant=variant,
+                host_name=host_name,
             )
             data = {
                 "folderPath": folder_path,
@@ -74,13 +74,13 @@ class CreateWorkfile(AutoCreator):
         ):
             # Update instance context if it's different
             product_name = self.get_product_name(
-                project_name,
-                folder_entity,
-                task_entity,
-                variant,
-                host_name,
+                project_name=project_name,
+                project_entity=project_entity,
+                folder_entity=folder_entity,
+                task_entity=task_entity,
+                variant=variant,
+                host_name=host_name,
                 instance=workfile_instance,
-                project_entity=project_entity
             )
 
             workfile_instance["folderPath"] = folder_path
