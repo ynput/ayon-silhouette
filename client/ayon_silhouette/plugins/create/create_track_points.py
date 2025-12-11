@@ -11,6 +11,7 @@ class CreateTrackPoints(plugin.SilhouetteCreator):
     label = "Track Points"
     description = __doc__
     product_type = "trackpoints"
+    product_base_type = "trackpoints"
     icon = "cubes"
 
     create_node_type = "TrackerNode"

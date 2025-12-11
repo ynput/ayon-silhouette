@@ -11,6 +11,7 @@ class CreateRender(plugin.SilhouetteCreator):
     label = "Render"
     description = __doc__
     product_type = "render"
+    product_base_type = "render"
     icon = "eye"
 
     def create(self, product_name, instance_data, pre_create_data):
