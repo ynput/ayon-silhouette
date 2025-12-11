@@ -11,6 +11,7 @@ class CreateMatteShapes(plugin.SilhouetteCreator):
     label = "Matte Shapes"
     description = __doc__
     product_type = "matteshapes"
+    product_base_type = "matteshapes"
     icon = "cubes"
 
     create_node_type = "RotoNode"
