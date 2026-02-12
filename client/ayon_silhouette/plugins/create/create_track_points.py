@@ -10,8 +10,8 @@ class CreateTrackPoints(plugin.SilhouetteCreator):
     identifier = "io.ayon.creators.silhouette.trackpoints"
     label = "Track Points"
     description = __doc__
-    product_type = "trackpoints"
     product_base_type = "trackpoints"
+    product_type = product_base_type
     icon = "cubes"
 
     create_node_type = "TrackerNode"

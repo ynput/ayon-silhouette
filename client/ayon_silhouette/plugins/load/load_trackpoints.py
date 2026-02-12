@@ -5,7 +5,8 @@ class TrackPointsLoader(plugin.SilhouetteImportLoader):
     """Load track points."""
 
     color = "orange"
-    product_types = {"trackpoints"}
+    product_base_types = {"trackpoints"}
+    product_types = product_base_types
     icon = "code-fork"
     label = "Load Trackers"
     order = -5

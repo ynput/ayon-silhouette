@@ -10,8 +10,8 @@ class CreateMatteShapes(plugin.SilhouetteCreator):
     identifier = "io.ayon.creators.silhouette.matteshapes"
     label = "Matte Shapes"
     description = __doc__
-    product_type = "matteshapes"
     product_base_type = "matteshapes"
+    product_type = product_base_type
     icon = "cubes"
 
     create_node_type = "RotoNode"

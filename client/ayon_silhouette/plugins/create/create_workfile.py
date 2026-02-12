@@ -9,8 +9,8 @@ class CreateWorkfile(AutoCreator):
     """Workfile auto-creator."""
     identifier = "io.ayon.creators.silhouette.workfile"
     label = "Workfile"
-    product_type = "workfile"
     product_base_type = "workfile"
+    product_type = product_base_type
     icon = "fa5.file"
 
     project_property_name = "AYON_workfile"
