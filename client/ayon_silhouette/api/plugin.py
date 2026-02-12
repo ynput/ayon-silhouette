@@ -67,8 +67,9 @@ class SilhouetteCreator(Creator):
     exporting e.g. track points and matte shapes from the same RotoNode.
 
     """
-    default_variants = ["Main"]
+    skip_discovery = True
     settings_category = "silhouette"
+    default_variants = ["Main"]
 
     create_node_type = "OutputNode"
 
