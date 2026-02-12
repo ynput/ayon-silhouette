@@ -1,10 +1,8 @@
-from ayon_silhouette.api import (
-    lib,
-    plugin
-)
+from ayon_silhouette.api import lib
+from ayon_silhouette.api.plugin import SilhouetteCreator
 
 
-class CreateRender(plugin.SilhouetteCreator):
+class CreateRender(SilhouetteCreator):
     """Render Output"""
 
     identifier = "io.ayon.creators.silhouette.render"
