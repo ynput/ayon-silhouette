@@ -65,7 +65,11 @@ class CreateWorkfile(AutoCreator):
             )
             self.log.info("Auto-creating workfile instance...")
             workfile_instance = CreatedInstance(
-                self.product_type, product_name, data, self
+                product_base_type=self.product_base_type,
+                product_type=self.product_base_type,
+                product_name=product_name,
+                data=data,
+                creator=self,
             )
             self._add_instance_to_context(workfile_instance)
 
