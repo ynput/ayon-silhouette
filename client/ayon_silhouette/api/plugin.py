@@ -63,12 +63,13 @@ class SilhouetteCreator(Creator):
     as `{node_id}|{uuid}`.
 
     This way, a single RotoNode can have multiple instances of different
-    product types (or even the same product type) to allow exporting e.g.
-    track points and matte shapes from the same RotoNode.
+    product base types (or even the same product base type) to allow
+    exporting e.g. track points and matte shapes from the same RotoNode.
 
     """
-    default_variants = ["Main"]
+    skip_discovery = True
     settings_category = "silhouette"
+    default_variants = ["Main"]
 
     create_node_type = "OutputNode"
 
@@ -129,8 +130,12 @@ class SilhouetteCreator(Creator):
         instance_data["instance_id"] = instance_id
         instance_data["label"] = self._define_label(
             instance_node, product_name)
+        product_type = instance_data.get("productType")
+        if not product_type:
+            product_type = self.product_base_type
         instance = CreatedInstance(
-            product_type=self.product_type,
+            product_base_type=self.product_base_type,
+            product_type=product_type,
             product_name=product_name,
             data=instance_data,
             creator=self,
