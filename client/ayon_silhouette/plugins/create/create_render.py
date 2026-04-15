@@ -1,17 +1,15 @@
-from ayon_silhouette.api import (
-    lib,
-    plugin
-)
+from ayon_silhouette.api import lib
+from ayon_silhouette.api.plugin import SilhouetteCreator
 
 
-class CreateRender(plugin.SilhouetteCreator):
+class CreateRender(SilhouetteCreator):
     """Render Output"""
 
     identifier = "io.ayon.creators.silhouette.render"
     label = "Render"
     description = __doc__
-    product_type = "render"
     product_base_type = "render"
+    product_type = product_base_type
     icon = "eye"
 
     def create(self, product_name, instance_data, pre_create_data):

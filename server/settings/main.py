@@ -8,6 +8,7 @@ from .imageio import ImageIOSettings, DEFAULT_IMAGEIO_SETTINGS
 from .templated_workfile_build import (
     TemplatedWorkfileBuildModel
 )
+from .create import CreatePluginsModel, DEFAULT_SILHOUETTE_CREATE_SETTINGS
 from .publish import PublishPluginsModel, DEFAULT_SILHOUETTE_PUBLISH_SETTINGS
 from .load import LoadPluginsModel, DEFAULT_SILHOUETTE_LOAD_SETTINGS
 
@@ -29,6 +30,10 @@ class SilhouetteSettings(BaseSettingsModel):
         title="Load",
         default_factory=LoadPluginsModel
     )
+    create: CreatePluginsModel = SettingsField(
+        title="Create",
+        default_factory=CreatePluginsModel
+    )
     publish: PublishPluginsModel = SettingsField(
         title="Publish",
         default_factory=PublishPluginsModel
@@ -44,6 +49,7 @@ DEFAULT_VALUES = {
     "session": DEFAULT_SILHOUETTE_SESSION_SETTINGS,
     "imageio": DEFAULT_IMAGEIO_SETTINGS,
     "load": DEFAULT_SILHOUETTE_LOAD_SETTINGS,
+    "create": DEFAULT_SILHOUETTE_CREATE_SETTINGS,
     "publish": DEFAULT_SILHOUETTE_PUBLISH_SETTINGS,
     "templated_workfile_build": {
         "profiles": []

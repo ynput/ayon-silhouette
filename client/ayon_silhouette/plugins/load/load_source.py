@@ -21,7 +21,8 @@ class SourceLoader(plugin.SilhouetteLoader):
     """Load media source."""
 
     color = "orange"
-    product_types = {"*"}
+    product_base_types = {"*"}
+    product_types = product_base_types
     icon = "code-fork"
     label = "Load Source"
     order = -10

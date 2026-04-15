@@ -4,7 +4,8 @@ from ayon_silhouette.api import plugin
 class ShapesLoader(plugin.SilhouetteImportLoader):
 
     color = "orange"
-    product_types = {"matteshapes"}
+    product_base_types = {"matteshapes"}
+    product_types = product_base_types
     icon = "code-fork"
     label = "Load Shapes"
     order = -5

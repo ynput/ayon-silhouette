@@ -9,8 +9,8 @@ class CreateWorkfile(AutoCreator):
     """Workfile auto-creator."""
     identifier = "io.ayon.creators.silhouette.workfile"
     label = "Workfile"
-    product_type = "workfile"
     product_base_type = "workfile"
+    product_type = product_base_type
     icon = "fa5.file"
 
     project_property_name = "AYON_workfile"
@@ -65,7 +65,11 @@ class CreateWorkfile(AutoCreator):
             )
             self.log.info("Auto-creating workfile instance...")
             workfile_instance = CreatedInstance(
-                self.product_type, product_name, data, self
+                product_base_type=self.product_base_type,
+                product_type=self.product_base_type,
+                product_name=product_name,
+                data=data,
+                creator=self,
             )
             self._add_instance_to_context(workfile_instance)
 

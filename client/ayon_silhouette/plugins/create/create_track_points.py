@@ -1,17 +1,18 @@
 import fx
 
 from ayon_core.lib import EnumDef
-from ayon_silhouette.api import plugin, lib
+from ayon_silhouette.api import lib
+from ayon_silhouette.api.plugin import SilhouetteCreator
 
 
-class CreateTrackPoints(plugin.SilhouetteCreator):
+class CreateTrackPoints(SilhouetteCreator):
     """Track Points"""
 
     identifier = "io.ayon.creators.silhouette.trackpoints"
     label = "Track Points"
     description = __doc__
-    product_type = "trackpoints"
     product_base_type = "trackpoints"
+    product_type = product_base_type
     icon = "cubes"
 
     create_node_type = "TrackerNode"
