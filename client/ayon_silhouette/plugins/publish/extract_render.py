@@ -37,7 +37,7 @@ class SilhouetteExtractRender(publish.Extractor):
                 "session": session,
                 "nodes": [output_node],
                 # Override frame range
-                # "frames": list(range(start, end+1))
+                "frames": list(range(start, end+1))
             },
             progress=get_progress_handler()
         )
