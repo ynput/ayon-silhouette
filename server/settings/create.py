@@ -4,6 +4,7 @@ from ayon_server.settings import BaseSettingsModel, SettingsField
 class ProductTypeItemModel(BaseSettingsModel):
     _layout = "compact"
     product_type: str = SettingsField(
+        "",
         title="Product type",
         description="Product type name",
     )
@@ -15,6 +16,10 @@ class ProductTypeItemModel(BaseSettingsModel):
 
 
 class CreatePluginModel(BaseSettingsModel):
+    enabled: bool = SettingsField(
+        True,
+        title="Enabled",
+    )
     product_type_items: list[ProductTypeItemModel] = SettingsField(
         default_factory=list,
         title="Product type items",
@@ -37,3 +42,19 @@ class CreatePluginsModel(BaseSettingsModel):
         title="Track Points",
         description="Create Track Points plugin settings.",
     )
+
+
+DEFAULT_SILHOUETTE_CREATE_SETTINGS = {
+    "CreateMatteShapes": {
+        "enabled": True,
+        "product_type_items": [],
+    },
+    "CreateRender": {
+        "enabled": True,
+        "product_type_items": [],
+    },
+    "CreateTrackPoints": {
+        "enabled": True,
+        "product_type_items": [],
+    },
+}
