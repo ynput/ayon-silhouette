@@ -20,8 +20,10 @@ from ayon_core.pipeline import (
 )
 from ayon_core.pipeline.load import any_outdated_containers
 from ayon_core.lib import emit_event, register_event_callback
-from ayon_core.pipeline.context_tools import get_current_task_entity
-from ayon_core.settings import get_current_project_settings
+from ayon_core.pipeline.context_tools import (
+    get_current_task_entity,
+    get_current_project_settings
+)
 from ayon_core.tools.workfile_template_build import open_template_ui
 from . import lib
 from .workfile_template_builder import (
@@ -84,14 +86,18 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         # register_inventory_action_path(INVENTORY_PATH)
         register_workfile_build_plugin_path(WORKFILE_BUILD_PATH)
 
-        defer(self._install_menu)
+        project_settings = get_current_project_settings()
+
+        if fx.gui:
+            defer(partial(self._install_menu, project_settings))
+            defer(partial(self._install_shortcuts, project_settings),
+                  timeout=500)
         self._install_hooks()
 
         register_event_callback("open", on_open)
         register_event_callback("init", on_init)
 
-    def _install_menu(self):
-        project_settings = get_current_project_settings()
+    def _install_menu(self, project_settings: dict):
         parent = lib.get_main_window()
 
         menu_label = os.environ.get("AYON_MENU_LABEL") or "AYON"
@@ -200,6 +206,31 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
         action.triggered.connect(
             lambda: host_tools.show_experimental_tools_dialog(parent=parent)
         )
+
+    def _install_shortcuts(self, project_settings: dict):
+        parent = lib.get_main_window()
+        shortcuts = project_settings["silhouette"]["ayon_menu"]["shortcuts"]
+
+        fn = {
+            "create": lambda: host_tools.show_publisher(parent=parent,
+                                                        tab="create"),
+            "publish": lambda: host_tools.show_publisher(parent=parent,
+                                                         tab="publish"),
+            "load": lambda: host_tools.show_loader(parent=parent,
+                                                   use_context=True),
+            "manage": lambda: host_tools.show_scene_inventory(parent=parent),
+            "build_workfile": build_workfile_template,
+            "workfiles": lambda: host_tools.show_workfiles(parent=parent),
+            "version_up_workfile": save_next_version,
+        }
+
+        for key, shortcut in shortcuts.items():
+            if not shortcut:
+                # No shortcut assigned
+                continue
+            callback = fn[key]
+            self.log.debug("Installing '%s' shortcut: %s", key, shortcut)
+            fx.bind(shortcut, callback)
 
     def _install_hooks(self):
         # Connect events
