@@ -37,7 +37,7 @@ class SilhouetteExtractRender(publish.Extractor):
                 "session": session,
                 "nodes": [output_node],
                 # Override frame range
-                # "frames": list(range(start, end+1))
+                "frames": list(range(start, end + 1))
             },
             progress=get_progress_handler()
         )
@@ -52,7 +52,7 @@ class SilhouetteExtractRender(publish.Extractor):
         # Collect all rendered outputs
         filepaths = []
         for output in outputs:
-            for frame in range(start, end+1):
+            for frame in range(start, end + 1):
                 filepath = output.buildPath(frame)
                 filepaths.append(filepath)
 
