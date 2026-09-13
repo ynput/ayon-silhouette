@@ -27,6 +27,18 @@ class SilhouetteAddon(AYONAddon, IHostAddon):
         paths = [path for path in paths if path]
         env[script_key] = os.pathsep.join(paths)
 
+        # Enforce `PYTHONPATH` into `SFX_SCRIPT_PATH` because Silhouette 2026+
+        # does not automatically include `PYTHONPATH` into `sys.path` anymore.
+        # See https://forum.borisfx.com/t/pythonpath-wiped-out-on-startup/23991
+        pythonpath = env.get("PYTHONPATH", "")
+        if pythonpath:
+            script_path = env.get("SFX_SCRIPT_PATH", "")
+            paths = []
+            if script_path:
+                paths.append(script_path)
+            paths.append(pythonpath)
+            env["SFX_SCRIPT_PATH"] = os.pathsep.join(paths)
+
     def get_workfile_extensions(self):
         return [
             ".sfx",
