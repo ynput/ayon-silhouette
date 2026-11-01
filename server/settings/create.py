@@ -20,6 +20,10 @@ class CreatePluginModel(BaseSettingsModel):
         True,
         title="Enabled",
     )
+    default_variants: list[str] = SettingsField(
+        default_factory=list,
+        title="Default Variants"
+    )
     product_type_items: list[ProductTypeItemModel] = SettingsField(
         default_factory=list,
         title="Product type items",
@@ -47,14 +51,17 @@ class CreatePluginsModel(BaseSettingsModel):
 DEFAULT_SILHOUETTE_CREATE_SETTINGS = {
     "CreateMatteShapes": {
         "enabled": True,
+        "default_variants": ["Main"],
         "product_type_items": [],
     },
     "CreateRender": {
         "enabled": True,
+        "default_variants": ["Main"],
         "product_type_items": [],
     },
     "CreateTrackPoints": {
         "enabled": True,
+        "default_variants": ["Main"],
         "product_type_items": [],
     },
 }
