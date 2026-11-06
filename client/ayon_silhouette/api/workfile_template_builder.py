@@ -47,6 +47,8 @@ class SilhouetteTemplateBuilder(AbstractTemplateBuilder):
 
 
 class SilhouettePlaceholderPlugin(PlaceholderPlugin):
+    skip_discovery = True
+
     data_key = "ayon.placeholder"
     item_class = PlaceholderItem
 
