@@ -155,11 +155,6 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
             lambda: host_tools.show_scene_inventory(parent=parent)
         )
 
-        action = menu.addAction("Library...")
-        action.triggered.connect(
-            lambda: host_tools.show_library_loader(parent=parent)
-        )
-
         menu.addSeparator()
 
         menu_settings = project_settings["silhouette"].get("ayon_menu", {})
