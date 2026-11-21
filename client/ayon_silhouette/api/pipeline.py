@@ -9,6 +9,7 @@ from qtpy import QtCore
 
 from ayon_core.host import HostBase, IWorkfileHost, ILoadHost, IPublishHost
 from ayon_core.tools.utils import host_tools
+from ayon_core.tools.task_in_use import install_task_in_use_notifier
 from ayon_core.pipeline import (
     register_loader_plugin_path,
     register_creator_plugin_path,
@@ -19,6 +20,10 @@ from ayon_core.pipeline import (
     registered_host
 )
 from ayon_core.pipeline.load import any_outdated_containers
+from ayon_core.pipeline.workfile.task_usage import (
+    install_task_usage_tracker,
+    uninstall_task_usage_tracker,
+)
 from ayon_core.lib import emit_event, register_event_callback
 from ayon_core.pipeline.context_tools import (
     get_current_task_entity,
@@ -92,10 +97,19 @@ class SilhouetteHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
             defer(partial(self._install_menu, project_settings))
             defer(partial(self._install_shortcuts, project_settings),
                   timeout=500)
+            defer(self._install_task_usage)
         self._install_hooks()
 
         register_event_callback("open", on_open)
         register_event_callback("init", on_init)
+
+    def _install_task_usage(self):
+        install_task_in_use_notifier()
+        install_task_usage_tracker(self)
+        # Silhouette does not call 'atexit' callbacks on exit
+        QtCore.QCoreApplication.instance().aboutToQuit.connect(
+            uninstall_task_usage_tracker
+        )
 
     def _install_menu(self, project_settings: dict):
         parent = lib.get_main_window()
